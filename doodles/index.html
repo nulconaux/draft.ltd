@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Paper Magazine Flowers & Doodles</title>
+
+  <!-- Handwritten / collage vibe font (optional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    /* 
+      =========================================================
+      PAPER MAGAZINE-STYLE BACKGROUND & BASE STYLING
+      =========================================================
+    */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Patrick Hand', cursive;
+    }
+    body {
+      /* Subtle paper-ish background with a repeated pattern to hint at collage or magazine style. */
+      background-color: #faf8f3;
+      background-image:
+        radial-gradient(#eae7dd 2px, transparent 2px),
+        url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='2' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.06'/%3E%3C/svg%3E");
+      background-repeat: repeat, repeat;
+      background-position: 0 0, center center;
+      background-size: 80px 80px, cover;
+      position: relative;
+    }
+    /* The main canvas for drawing everything. */
+    #drawCanvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* An optional top panel with a simple description or controls. */
+    .info-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 10px 15px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      z-index: 10;
+    }
+    .info-panel h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="info-panel">
+    <h1>Paper Magazine Flowers & 7 Doodles</h1>
+    <p>Watch them drift & collide. Black/Grey flowers plus 7 other shapes!</p>
+  </div>
+
+  <canvas id="drawCanvas"></canvas>
+
+  <script>
+    /************************************************************
+     * 1) CANVAS & GLOBAL SETUP
+     ************************************************************/
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener("resize", () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
+
+    // Array of all objects (flowers + 7 doodle shapes).
+    const entities = [];
+
+    // Probability or rate at which objects spawn
+    // (One new entity every ~1 second on average).
+    const SPAWN_INTERVAL_MS = 1000;
+    const OBJECT_SPEED = 0.5; // base speed
+    const FLOWER_CHANCE = 0.4; // 40% chance to spawn a flower, else doodle shape
+
+    // We define at least 7 different shape "types".
+    // We'll randomly pick from this list if not a flower.
+    const DOODLE_TYPES = [
+      "star",         // 1
+      "scribbleLine", // 2
+      "triangle",     // 3
+      "wavyLine",     // 4
+      "rectangle",    // 5
+      "bubbleCircle", // 6
+      "spiral"        // 7
+    ];
+
+    /************************************************************
+     * 2) SPAWN LOGIC
+     ************************************************************/
+    function spawnEntity() {
+      const isFlower = Math.random() < FLOWER_CHANCE;
+      if(isFlower) {
+        // Spawn a black-grey gradient flower
+        entities.push(createFlower());
+      } else {
+        // Spawn a doodle from the 7 types
+        const shapeType = randomChoice(DOODLE_TYPES);
+        entities.push(createDoodle(shapeType));
+      }
+    }
+
+    // We'll call `spawnEntity()` repeatedly
+    setInterval(spawnEntity, SPAWN_INTERVAL_MS);
+
+    /************************************************************
+     * 3) CREATE A FLOWER
+     *    - black to grey gradient petals
+     *    - random size, random location
+     *    - "hand-drawn" offset for each petal path
+     ************************************************************/
+    function createFlower() {
+      const x = Math.random() * cw;
+      const y = Math.random() * ch;
+      const radius = randomRange(40, 80); // overall "flower size"
+      const petals = randomInt(4, 9);
+      const angle = 0; // initial angle
+      const speed = OBJECT_SPEED * randomRange(0.5, 1.5);
+      const direction = randomRange(0, 2*Math.PI);
+      const vx = Math.cos(direction) * speed;
+      const vy = Math.sin(direction) * speed;
+
+      // "hand-drawn" jitter factor (for shaky lines)
+      const jitter = 1.5;
+
+      return {
+        type: "flower",
+        x, y, vx, vy, angle,
+        radius, petals, jitter,
+        // bounding circle radius (for collisions)
+        collisionRadius: radius * 0.6,
+      };
+    }
+
+    /************************************************************
+     * 4) CREATE A DOODLE SHAPE
+     *    - 7 possible "type" (star, scribbleLine, etc.)
+     *    - random size, random velocity, random color (grayscale)
+     ************************************************************/
+    function createDoodle(dType) {
+      const x = Math.random() * cw;
+      const y = Math.random() * ch;
+      const size = randomRange(30, 70);
+      const angle = 0; 
+      const speed = OBJECT_SPEED * randomRange(0.5, 1.5);
+      const direction = randomRange(0, 2*Math.PI);
+      const vx = Math.cos(direction) * speed;
+      const vy = Math.sin(direction) * speed;
+
+      // For a grayscale color, pick light to darker grey
+      const greyVal = randomInt(50, 180);
+      const color = `rgb(${greyVal}, ${greyVal}, ${greyVal})`;
+
+      return {
+        type: dType,
+        x, y, vx, vy, angle,
+        size,
+        color,
+        // bounding circle radius for collisions
+        collisionRadius: size * 0.5,
+      };
+    }
+
+    /************************************************************
+     * 5) UPDATE + COLLISION + DRAW
+     ************************************************************/
+    function animate() {
+      requestAnimationFrame(animate);
+      ctx.clearRect(0, 0, cw, ch);
+
+      // Update positions & handle collisions
+      for (let i=0; i<entities.length; i++){
+        const e = entities[i];
+        updateEntity(e);
+
+        // Collide with others
+        for(let j=i+1; j<entities.length; j++){
+          const other = entities[j];
+          handleCollision(e, other);
+        }
+      }
+
+      // Then draw them
+      for (const e of entities) {
+        drawEntity(e);
+      }
+    }
+    requestAnimationFrame(animate);
+
+    /************************************************************
+     * 6) UPDATE EACH ENTITY
+     ************************************************************/
+    function updateEntity(e) {
+      e.x += e.vx;
+      e.y += e.vy;
+      // bounce off walls
+      if(e.x < 0 || e.x > cw) e.vx *= -1;
+      if(e.y < 0 || e.y > ch) e.vy *= -1;
+      e.angle += 0.01; 
+    }
+
+    /************************************************************
+     * 7) COLLISION HANDLING
+     *    - simple circle collision
+     *    - if collided, we "bounce" them apart
+     ************************************************************/
+    function handleCollision(a, b) {
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const sumR = a.collisionRadius + b.collisionRadius;
+      if(dist < sumR) {
+        // Overlap => bounce
+        // Simple: swap velocities or push them away
+        const angle = Math.atan2(dy, dx);
+        // push object a
+        a.vx = -Math.cos(angle) * Math.abs(a.vx);
+        a.vy = -Math.sin(angle) * Math.abs(a.vy);
+        // push object b
+        b.vx = Math.cos(angle) * Math.abs(b.vx);
+        b.vy = Math.sin(angle) * Math.abs(b.vy);
+      }
+    }
+
+    /************************************************************
+     * 8) DRAW EACH ENTITY
+     ************************************************************/
+    function drawEntity(e) {
+      switch(e.type) {
+        case "flower":
+          drawFlowerEntity(e);
+          break;
+        case "star":
+          drawStar(e);
+          break;
+        case "scribbleLine":
+          drawScribbleLine(e);
+          break;
+        case "triangle":
+          drawTriangle(e);
+          break;
+        case "wavyLine":
+          drawWavyLine(e);
+          break;
+        case "rectangle":
+          drawRectangle(e);
+          break;
+        case "bubbleCircle":
+          drawBubbleCircle(e);
+          break;
+        case "spiral":
+          drawSpiral(e);
+          break;
+      }
+    }
+
+    /************************************************************
+     * 9) DRAW FLOWER (black-grey gradient & "hand-drawn")
+     ************************************************************/
+    function drawFlowerEntity(f) {
+      const { x, y, radius, petals, angle, jitter } = f;
+
+      // We can do "hand-drawn" effect by randomly offsetting control points
+      // For the black-grey gradient, let's use a radial gradient from black->grey.
+      const grad = ctx.createRadialGradient(x,y, radius*0.3, x,y, radius);
+      grad.addColorStop(0, "#000");
+      grad.addColorStop(1, "#555");
+
+      // draw petals
+      ctx.fillStyle = grad;
+      ctx.strokeStyle = grad;
+
+      for(let i=0; i<petals; i++){
+        const petalAngle = angle + ( (2*Math.PI) / petals ) * i;
+        const petalX = x + radius * Math.cos(petalAngle);
+        const petalY = y + radius * Math.sin(petalAngle);
+
+        // "hand-drawn" approach: multiple arcs or bezier with random offset
+        ctx.beginPath();
+        const off1 = randomRange(-jitter, jitter);
+        const off2 = randomRange(-jitter, jitter);
+        const ctrlX = (x + petalX)/2 + randomRange(-10,10);
+        const ctrlY = (y + petalY)/2 + randomRange(-10,10);
+
+        ctx.moveTo(x + off1, y + off2);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, petalX, petalY);
+        ctx.quadraticCurveTo(ctrlX, ctrlY, x + off1, y + off2);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // center circle
+      ctx.beginPath();
+      ctx.arc(x, y, radius*0.2, 0, 2*Math.PI);
+      ctx.fillStyle = "#666";
+      ctx.fill();
+    }
+
+    /************************************************************
+     * 10) DRAW 7 DOODLE SHAPES
+     * (All in black/gray scale or random grayscale)
+     ************************************************************/
+    // 1) Star
+    function drawStar(s) {
+      const {x, y, size, angle, color} = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+
+      ctx.beginPath();
+      const spikes = 5;
+      const outerRadius = size;
+      const innerRadius = size * 0.5;
+      for(let i=0; i<2*spikes; i++){
+        const r = i % 2 === 0 ? outerRadius : innerRadius;
+        const theta = (Math.PI * i) / spikes;
+        const sx = r * Math.cos(theta);
+        const sy = r * Math.sin(theta);
+        i===0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // 2) ScribbleLine
+    function drawScribbleLine(s) {
+      const {x, y, size, angle, color} = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      // "scribble"  - random arcs
+      let cx = 0, cy = 0;
+      ctx.moveTo(cx, cy);
+      for(let i=0; i<5; i++){
+        cx += randomRange(-size, size);
+        cy += randomRange(-size, size);
+        ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 3) Triangle
+    function drawTriangle(s) {
+      const { x, y, size, angle, color } = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, -size/1.5);
+      ctx.lineTo(-size/2, size/2);
+      ctx.lineTo(size/2, size/2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 4) WavyLine
+    function drawWavyLine(s) {
+      const { x, y, size, angle, color } = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+
+      ctx.beginPath();
+      let px = 0, py = 0;
+      ctx.moveTo(px, py);
+      for(let i=0; i<10; i++){
+        px += size/10;
+        py = Math.sin(i*0.7) * 10;
+        ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // 5) Rectangle
+    function drawRectangle(s) {
+      const { x, y, size, angle, color } = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.fillRect(-size/2, -size/2, size, size * 0.6);
+      ctx.restore();
+    }
+
+    // 6) BubbleCircle
+    function drawBubbleCircle(s) {
+      const { x, y, size, color } = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, size*0.5, 0, 2*Math.PI);
+      ctx.fill();
+      // maybe smaller circle inside
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.arc(-size*0.15, -size*0.15, size*0.2, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // 7) Spiral
+    function drawSpiral(s) {
+      const { x, y, size, angle, color } = s;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let r = 1;
+      let theta = 0;
+      while(r < size) {
+        const px = r * Math.cos(theta);
+        const py = r * Math.sin(theta);
+        ctx.lineTo(px, py);
+        r += 0.5;       // radial increment
+        theta += 0.2;   // angular increment
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /************************************************************
+     * 11) UTILITY FUNCTIONS
+     ************************************************************/
+    function randomRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    function randomInt(min, max) {
+      return Math.floor(randomRange(min, max));
+    }
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+  </script>
+</body>
+</html>

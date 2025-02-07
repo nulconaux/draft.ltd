@@ -5,26 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Draft.ltd — Safe Space for Draft Content</title>
 
-  <!-- TailwindCSS for quick responsive utility classes (optional) -->
+  <!-- TailwindCSS для быстрой стилизации (по желанию) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Retro / Handwritten fonts -->
+  <!-- Шрифты (ретро / рукописный) -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Patrick+Hand&display=swap" rel="stylesheet">
 
   <style>
-    /* 
-     * ================================
-     * Base Styling
-     * ================================
-     */
-    body {
+    /* ================================
+       Базовые стили
+       ================================ */
+    html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
+    }
+    body {
       background-color: #F5F3EE;
       color: #1A1A1A;
       font-family: 'Patrick Hand', cursive;
       overflow-x: hidden;
-      /* Subtle noise background */
+      /* Лёгкий шум на фоне */
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/></svg>");
       position: relative;
       min-height: 100vh;
@@ -35,7 +36,7 @@
       padding: 40px 20px;
       text-align: center;
       position: relative;
-      z-index: 1;
+      z-index: 1; /* чтобы содержимое было выше canvas */
     }
     h1, h2, h3 {
       margin: 0;
@@ -50,12 +51,53 @@
       font-size: 0.9rem;
     }
 
-    /* 
-     * ================================
-     * GLITCH EFFECT (Borrowed)
-     * ================================
-     * Uses a text-shadow and keyframes to simulate glitching
-     */
+    /* ================================
+       Canvas для листьев
+       ================================ */
+    #leavesCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none; /* чтобы клики проходили сквозь canvas */
+      z-index: 0;           /* фон ниже основного контента */
+    }
+
+    /* ================================
+       Анимированная виньетка
+       ================================
+       С помощью псевдоэлемента body::before
+       делаем мягкое пульсирующее затемнение по краям.
+    */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 2; /* выше canvas, но ниже контента container (z-index:1) */
+      animation: vignettePulse 6s ease-in-out infinite alternate;
+    }
+    @keyframes vignettePulse {
+      0% {
+        background: radial-gradient(
+          circle at center,
+          transparent 60%,
+          rgba(0,0,0,0.4) 100%
+        );
+      }
+      100% {
+        background: radial-gradient(
+          circle at center,
+          transparent 50%,
+          rgba(0,0,0,0.6) 100%
+        );
+      }
+    }
+
+    /* ================================
+       GLITCH EFFECT (из примеров)
+       ================================ */
     .glitch {
       font-family: 'Press Start 2P', monospace;
       font-size: 2.5rem;
@@ -92,11 +134,9 @@
       100% { clip: rect(0, 9999px, 0, 0); transform: translate(0, 0); }
     }
 
-    /* 
-     * ================================
-     * ROTATING ARROW (Borrowed)
-     * ================================
-     */
+    /* ================================
+       ROTATING ARROW (из примеров)
+       ================================ */
     #rotatingArrow {
       font-size: 3rem;
       display: inline-block;
@@ -109,38 +149,9 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* 
-     * ================================
-     * TAG CLOUD (Optional)
-     * ================================
-     * If you'd like to keep the random folder links from the first snippet.
-     */
-    .tag-cloud {
-      position: relative;
-      width: 100%;
-      height: 60vh;
-      margin: 0 auto;
-      margin-top: 40px;
-      overflow: hidden;
-    }
-    .tag-cloud a {
-      position: absolute;
-      text-decoration: none;
-      color: #1A1A1A;
-      font-family: 'Press Start 2P', monospace;
-      transition: transform 0.3s ease, color 0.3s ease;
-      will-change: transform, color;
-    }
-
-    /* 
-     * ================================
-     * 3 NEW & UNIQUE EFFECTS
-     * ================================
-     * 1) swirlText - text rotates in a swirl motion
-     * 2) fadeHighlight - highlight that fades in/out
-     * 3) risingText - text gently rises and falls
-     */
-
+    /* ================================
+       3 NEW & UNIQUE EFFECTS (из примеров)
+       ================================ */
     /* --- 1) swirlText --- */
     .swirlText {
       display: inline-block;
@@ -166,7 +177,6 @@
         transform: rotate(0deg) translateY(0);
       }
     }
-
     /* --- 2) fadeHighlight --- */
     .fadeHighlight {
       display: inline-block;
@@ -182,7 +192,6 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.4; }
     }
-
     /* --- 3) risingText --- */
     .risingText {
       display: inline-block;
@@ -197,12 +206,30 @@
       100% { transform: translateY(0);   opacity: 1; }
     }
 
-    /* 
-     * ================================
-     * BACKGROUND FORMULAS (Optional Extra)
-     * ================================
-     * for a whimsical conceptual background effect
-     */
+    /* ================================
+       TAG CLOUD (при желании)
+       ================================ */
+    .tag-cloud {
+      position: relative;
+      width: 100%;
+      height: 60vh;
+      margin: 0 auto;
+      margin-top: 40px;
+      overflow: hidden;
+    }
+    .tag-cloud a {
+      position: absolute;
+      text-decoration: none;
+      color: #1A1A1A;
+      font-family: 'Press Start 2P', monospace;
+      transition: transform 0.3s ease, color 0.3s ease;
+      will-change: transform, color;
+    }
+
+    /* ================================
+       Фоновая анимация "математических формул"
+       (по желанию)
+       ================================ */
     .math-formula {
       position: absolute;
       font-size: 10px;
@@ -215,18 +242,21 @@
       50% { transform: translateY(-20px) rotate(5deg); }
       100% { transform: translateY(0) rotate(0deg); }
     }
-
   </style>
 </head>
 <body>
+  <!-- Canvas для анимированных листьев -->
+  <canvas id="leavesCanvas"></canvas>
+
   <div class="container">
-    <!-- Title with Glitch Effect -->
+    <!-- Заголовок с Glitch-эффектом -->
     <h1 class="glitch" data-text="Draft.ltd">Draft.ltd</h1>
     <p class="mt-4 text-lg">Your Safe Space for Draft Content</p>
-    <!-- Rotating Arrow -->
+
+    <!-- Вращающаяся стрелка -->
     <div id="rotatingArrow">➤</div>
 
-    <!-- 3 New Unique Effects Demo Section -->
+    <!-- 3 новых эффекта -->
     <div class="mt-8">
       <div class="swirlText">Always in Motion</div>
     </div>
@@ -237,7 +267,7 @@
       <div class="risingText">Everything Rises to Another Draft</div>
     </div>
 
-    <!-- (Optional) Tag Cloud Example -->
+    <!-- (Опционально) Облако тегов -->
     <div id="tagCloud" class="tag-cloud"></div>
   </div>
 
@@ -251,10 +281,89 @@
     </p>
   </footer>
 
-  <!-- Optional Tag Cloud + Background Equations Script -->
+  <!-- Скрипт для листьев, тэг-облака и фоновых формул -->
   <script>
-    /* --- Tag Cloud Setup (from first snippet) --- */
+    /************************************************
+     * 1) АНИМАЦИЯ ЛИСТЬЕВ НА CANVAS
+     ************************************************/
+    const canvas = document.getElementById("leavesCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener("resize", () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
+
+    // Массив символов-листьев (можно заменять на эмоджи, символы и т.п.)
+    const leafChars = ["🍂","🍃","🍁"];
+    // Хранение объектов-листьев
+    let leaves = [];
+
+    // Генерация начального набора листьев
+    const LEAF_COUNT = 20; // можно увеличить/уменьшить
+    for(let i=0; i<LEAF_COUNT; i++) {
+      leaves.push(createLeaf());
+    }
+
+    // Функция для создания одного «листа»
+    function createLeaf() {
+      return {
+        char: leafChars[Math.floor(Math.random() * leafChars.length)],
+        x: Math.random() * cw,
+        y: Math.random() * ch,
+        size: 24 + Math.random() * 16,
+        speedX: -1 + Math.random() * -3, // скорость по X (лист летит справа налево)
+        speedY: 0.5 + Math.random(),     // скорость по Y
+        swing: Math.random() * 2,        // амплитуда колебаний по вертикали/горизонтали
+        angle: Math.random() * 360,      // для колебаний
+        angleSpeed: 0.01 + Math.random() * 0.02 // скорость изменения угла
+      };
+    }
+
+    function updateLeaves() {
+      leaves.forEach((leaf) => {
+        // Обновляем позицию
+        leaf.x += leaf.speedX;
+        // Немного "покачиваем" по Y
+        leaf.angle += leaf.angleSpeed;
+        leaf.y += Math.sin(leaf.angle) * leaf.swing * 0.5 + leaf.speedY;
+
+        // Если лист вышел за левый или нижний край — перезапускаем сверху справа
+        if(leaf.x < -50 || leaf.y > ch + 50) {
+          leaf.x = cw + 50;
+          leaf.y = Math.random() * (ch/2);
+        }
+      });
+    }
+
+    function drawLeaves() {
+      ctx.clearRect(0, 0, cw, ch); // очистка canvas
+      leaves.forEach((leaf) => {
+        ctx.font = `${leaf.size}px serif`;
+        ctx.fillText(leaf.char, leaf.x, leaf.y);
+      });
+    }
+
+    function animateLeaves() {
+      updateLeaves();
+      drawLeaves();
+      requestAnimationFrame(animateLeaves);
+    }
+    animateLeaves();
+
+
+    /************************************************
+     * 2) ОБЛАКО ТЕГОВ (из первого примера)
+     ************************************************/
     const folders = ["manifesto", "showcase", "start", "erase", "latest", "pad", "debug", "part1", "fall", "matro", "rhythm", "paradox"];
+
     const tagCloud = document.getElementById("tagCloud");
     if(tagCloud) {
       const cloudWidth = tagCloud.clientWidth;
@@ -268,22 +377,21 @@
         const a = document.createElement("a");
         a.href = folder + "/index.html";
         a.textContent = folder;
-        // Random position
+        // Случайное позиционирование
         a.style.left = randomInRange(0, cloudWidth - 100) + "px";
         a.style.top = randomInRange(0, cloudHeight - 50) + "px";
-        // Random rotation
+        // Случайный угол
         a.style.transform = "rotate(" + randomInRange(-20, 20) + "deg)";
-        // Random font size
+        // Случайный размер шрифта
         a.style.fontSize = randomInRange(1.2, 2) + "rem";
         tagCloud.appendChild(a);
 
-        // Mouse enter effect
+        // Hover-эффекты
         a.addEventListener("mouseenter", () => {
           a.style.transition = "transform 0.3s ease, color 0.3s ease";
           a.style.transform = `scale(1.2) rotate(${randomInRange(-15,15)}deg)`;
           a.style.color = "#FF4500";
         });
-        // Mouse leave effect
         a.addEventListener("mouseleave", () => {
           a.style.transition = "transform 0.5s ease, color 0.5s ease";
           a.style.transform = `rotate(${randomInRange(-20,20)}deg)`;
@@ -292,7 +400,10 @@
       });
     }
 
-    /* --- Background Math Formulas (Optional) --- */
+    /************************************************
+     * 3) Фоновые «математические формулы»
+     * (по желанию, тоже из первого примера)
+     ************************************************/
     const mathEquations = ["E=mc²", "F=ma", "π≈3.14", "∑", "√2", "a²+b²=c²", "∫", "σ", "λ", "∆", "Ω", "±", "φ"];
     function initMathFormulas(count) {
       for (let i = 0; i < count; i++) {
@@ -305,7 +416,10 @@
         document.body.appendChild(div);
       }
     }
-    // Create 15 swirling math formulas
+    // Создадим 15 «парящих» формул
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
     initMathFormulas(15);
   </script>
 </body>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draft Sound Fall Simulation</title>
+  <!-- Use TailwindCSS CDN for utility classes (optional) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font for a handwritten, draft feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    /* Base styling: warm paper-like background with subtle noise */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fdf6e3;
+      font-family: 'Patrick Hand', cursive;
+      color: #333;
+      overflow: hidden;
+      position: relative;
+      /* Subtle noise overlay via inline SVG */
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/></svg>");
+    }
+    /* Full viewport container */
+    .game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Style for each falling symbol */
+    .symbol {
+      position: absolute;
+      font-size: 2rem;
+      /* Use a dark tone to contrast the paper background */
+      color: #333;
+      user-select: none;
+      /* Subtle transition for any transform (if you later want to add interactivity) */
+      transition: transform 0.2s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container" id="gameContainer"></div>
+  
+  <script>
+    /********************
+     * Web Audio Setup
+     ********************/
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    
+    // Ensure audio context resumes on user interaction (for mobile browsers)
+    document.body.addEventListener("click", () => {
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    });
+    
+    /********************
+     * Simulation Parameters
+     ********************/
+    // Array of symbols (letters, numbers, special characters)
+    const symbols = [
+      "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+      "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+      "!", "@", "#", "$", "%", "&", "*", "±", "§", "∞"
+    ];
+    
+    const gameContainer = document.getElementById("gameContainer");
+    const spawnInterval = 300; // spawn a new symbol every 300ms
+    const gravity = 0.5;       // base falling speed (pixels per frame; will be adjusted)
+    
+    /********************
+     * Function: spawnSymbol
+     ********************/
+    function spawnSymbol() {
+      // Create a new symbol element
+      const el = document.createElement("div");
+      el.className = "symbol";
+      // Choose a random symbol from the array
+      el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+      
+      // Randomize horizontal position (ensure it stays within viewport width)
+      const posX = Math.random() * (window.innerWidth - 50);
+      el.style.left = posX + "px";
+      // Start above the viewport
+      let posY = -50;
+      el.style.top = posY + "px";
+      
+      // Optionally add a slight random rotation for a messy, hand-drawn effect
+      el.style.transform = "rotate(" + (Math.random() * 20 - 10) + "deg)";
+      
+      // Append the element to the game container
+      gameContainer.appendChild(el);
+      
+      // Play a short sound for this symbol
+      playSymbolSound();
+      
+      // Animate the falling symbol using requestAnimationFrame
+      // Use a local gravity and speed factor that increases over time
+      const spawnTime = Date.now();
+      const baseSpeed = 2; // base falling speed multiplier
+      
+      function fall() {
+        // Increase falling speed over time (simulate acceleration)
+        const elapsed = (Date.now() - spawnTime) / 1000; // seconds since spawn
+        const speedFactor = 1 + elapsed; // gradually increasing speed
+        posY += baseSpeed * speedFactor;
+        el.style.top = posY + "px";
+        // If the symbol is still within the viewport, continue falling
+        if (posY < window.innerHeight) {
+          requestAnimationFrame(fall);
+        } else {
+          // Remove the symbol once it exits the viewport
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }
+      }
+      requestAnimationFrame(fall);
+    }
+    
+    /********************
+     * Function: playSymbolSound
+     ********************/
+    function playSymbolSound() {
+      // Create an oscillator node and a gain node
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      // Random frequency between 200 Hz and 800 Hz
+      oscillator.frequency.value = 200 + Math.random() * 600;
+      // Randomly choose a waveform for variety
+      const waveforms = ["sine", "square", "sawtooth", "triangle"];
+      oscillator.type = waveforms[Math.floor(Math.random() * waveforms.length)];
+      
+      // Create a short envelope: moderate volume quickly fades out
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    }
+    
+    /********************
+     * Start Spawning Loop
+     ********************/
+    function startSpawning() {
+      setInterval(spawnSymbol, spawnInterval);
+    }
+    
+    /********************
+     * Start the Simulation
+     ********************/
+    startSpawning();
+  </script>
+</body>
+</html>

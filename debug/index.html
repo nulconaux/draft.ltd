@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draft Debug Console</title>
+  
+  <!-- TailwindCSS for utility classes -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Alpine.js for lightweight reactivity -->
+  <script defer src="https://unpkg.com/alpinejs@3/dist/cdn.min.js"></script>
+  <!-- Google Fonts for a handwritten look -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Reenie+Beanie&family=Indie+Flower&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Base styling: warm paper background with subtle noise */
+    body {
+      background: #fdf6e3;
+      font-family: 'Patrick Hand', cursive;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      overflow-x: hidden;
+      position: relative;
+    }
+    /* Subtle paper texture (using CSS gradients) */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background-image: 
+        repeating-linear-gradient(0deg, transparent 95%, rgba(0,0,0,0.02) 95%),
+        repeating-linear-gradient(90deg, transparent 95%, rgba(0,0,0,0.02) 95%);
+      background-size: 40px 40px;
+      z-index: -1;
+    }
+    /* Header styling */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    header h1 {
+      font-family: 'Reenie Beanie', cursive;
+      font-size: 2.75rem;
+      margin-bottom: 10px;
+      position: relative;
+      /* Glitch effect to hint that nothing is final */
+      color: #333;
+    }
+    header h1.glitch::before,
+    header h1.glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    header h1.glitch::before {
+      color: #ff4500;
+      animation: glitch 2s infinite linear alternate-reverse;
+    }
+    header h1.glitch::after {
+      color: #00aaff;
+      animation: glitch 2s infinite linear alternate-reverse;
+      animation-delay: 1s;
+    }
+    @keyframes glitch {
+      0% { clip: rect(2px, 9999px, 8px, 0); transform: translate(2px, -2px); }
+      100% { clip: rect(2px, 9999px, 8px, 0); transform: translate(-2px, 2px); }
+    }
+    header p {
+      font-family: 'Indie Flower', cursive;
+      font-size: 1.25rem;
+      margin-bottom: 20px;
+      color: #555;
+    }
+    /* Console panels */
+    .console-panel {
+      background: rgba(255,255,255,0.93);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    .console-panel h2 {
+      font-family: 'Reenie Beanie', cursive;
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      color: #333;
+    }
+    .console-panel p,
+    .console-panel span {
+      font-size: 1rem;
+      color: #333;
+    }
+    /* Log window styling */
+    .log-window {
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+      border-top: 1px dashed rgba(0,0,0,0.1);
+      padding-top: 0.5rem;
+    }
+    /* Footer styling */
+    footer {
+      margin-top: 40px;
+      padding: 20px;
+      font-size: 0.8rem;
+      color: #666;
+      background: #fdf6e3;
+      text-align: center;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body x-data="debugConsole()">
+  <div class="max-w-4xl mx-auto p-5">
+    <header>
+      <!-- Glitch header text (emphasizing draft state) -->
+      <h1 id="headerText" class="glitch" data-text="DRAFT DEBUG CONSOLE">DRAFT DEBUG CONSOLE</h1>
+      <p>"Nothing is finished. Everything is a draft—even this console."</p>
+    </header>
+    
+    <!-- System Stats Panel -->
+    <div class="console-panel">
+      <h2>System Stats</h2>
+      <p>FPS: <span x-text="fps"></span></p>
+      <p>Memory: <span x-text="memory"></span> MB</p>
+      <p>CPU Cores: <span x-text="cpuCores"></span></p>
+      <p>Pixel Ratio: <span x-text="pixelRatio"></span></p>
+      <p class="mt-2" style="color:#b22222;">Warning: Update remains perpetually unfinished!</p>
+    </div>
+    
+    <!-- Game Logs Panel -->
+    <div class="console-panel">
+      <h2>Events</h2>
+      <div class="log-window">
+        <template x-for="log in logs" :key="log.id">
+          <p>[<span x-text="log.time"></span>] <span x-text="log.message"></span></p>
+        </template>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer>
+    <p>Support the unfinished masterpiece</p>
+    <p>
+      <a href="https://www.buymeacoffee.com/" target="_blank" style="text-decoration: none; color: inherit;">Buy Me a Coffee</a>
+    </p>
+  </footer>
+  
+  <script>
+    function debugConsole() {
+      return {
+        fps: 0,
+        memory: 'N/A',
+        cpuCores: navigator.hardwareConcurrency || 'N/A',
+        pixelRatio: window.devicePixelRatio || 'N/A',
+        logs: [],
+        lastTime: performance.now(),
+        frameCount: 0,
+        init() {
+          this.updateMetrics();
+          this.mockLogs();
+        },
+        updateMetrics() {
+          requestAnimationFrame(() => this.updateMetrics());
+          const now = performance.now();
+          this.frameCount++;
+          if (now - this.lastTime >= 1000) {
+            this.fps = this.frameCount;
+            this.frameCount = 0;
+            this.lastTime = now;
+          }
+          if (performance.memory) {
+            this.memory = (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(2);
+          }
+        },
+        mockLogs() {
+          setInterval(() => {
+            this.logs.unshift({
+              id: Date.now(),
+              time: new Date().toLocaleTimeString(),
+              message: this.randomLogMessage()
+            });
+            if (this.logs.length > 50) this.logs.pop();
+          }, 2000);
+        },
+        randomLogMessage() {
+          const messages = [
+            "Draft remains unfinished. Submit revision?",
+            "Warning: Code incomplete—update pending.",
+            "Notice: Final update? Still a fantasy.",
+            "Error: Nothing is ever really finished.",
+            "Debug: Revision process stuck in perpetual draft mode.",
+            "Alert: The last commit is always a draft."
+          ];
+          return messages[Math.floor(Math.random() * messages.length)];
+        }
+      }
+    }
+    
+    document.addEventListener('alpine:init', () => {
+      Alpine.data('debugConsole', debugConsole);
+    });
+  </script>
+</body>
+</html>

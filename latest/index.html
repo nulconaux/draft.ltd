@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 - Draft Theory Misunderstanding</title>
+  <!-- Use a pixelated, retro font -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    /* Base styling: light, clear background with pixelated font */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #F5F3EE;
+      font-family: 'Press Start 2P', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: #1A1A1A;
+      text-align: center;
+    }
+    /* Main container for the error message */
+    .error-container {
+      max-width: 600px;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0;
+      animation: fadeInDown 1s forwards;
+    }
+    p {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+      opacity: 0;
+      animation: fadeInUp 1s forwards;
+    }
+    /* Stagger the animations */
+    p:nth-child(2) { animation-delay: 0.5s; }
+    p:nth-child(3) { animation-delay: 1s; }
+    p:nth-child(4) { animation-delay: 1.5s; }
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="error-container">
+    <h1>404</h1>
+    <p>Oh, noo</p>
+    <p>Any updates on this?</p>
+  </div>
+</body>
+</html>

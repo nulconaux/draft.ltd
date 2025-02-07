@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <!-- Ensure proper scaling on mobile devices -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>The Draft Manifesto</title>
+
+  <!-- TailwindCSS for responsive styling -->
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Alpine.js (optional lightweight reactivity) -->
+
+  <script src="https://unpkg.com/alpinejs@3/dist/cdn.min.js" defer></script>
+
+  <!-- Handwritten Fonts -->
+
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Reenie+Beanie&family=Indie+Flower&display=swap" rel="stylesheet">
+
+  
+
+  <style>
+
+    /* Base styling – light, clean “paper‐like” background */
+
+    body {
+
+      font-family: 'Patrick Hand', cursive;
+
+      background: #F5F3EE;
+
+      margin: 0;
+
+      padding: 20px;
+
+      color: #1A1A1A;
+
+      position: relative;
+
+    }
+
+    h1, h2, h3 {
+
+      font-family: 'Reenie Beanie', cursive;
+
+    }
+
+    /* Fixed red progress bar */
+
+    #progressBar {
+
+      position: fixed;
+
+      top: 0;
+
+      left: 0;
+
+      height: 5px;
+
+      background-color: #ff4500;
+
+      width: 0%;
+
+      z-index: 10000;
+
+    }
+
+    /* Main content container */
+
+    .content {
+
+      max-width: 800px;
+
+      margin: 60px auto;
+
+      padding: 20px;
+
+      background: rgba(255,255,255,0.93);
+
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+    }
+
+    .section {
+
+      margin-bottom: 40px;
+
+    }
+
+    .section p {
+
+      margin-bottom: 20px;
+
+      line-height: 1.6;
+
+    }
+
+    /* Revision counter */
+
+    #revision-counter {
+
+      text-align: center;
+
+      font-size: 0.9rem;
+
+      color: #ff4500;
+
+      margin: 10px 0;
+
+    }
+
+    /* Self‑editing text: “quick fix” etc. (fades out/in) */
+
+    .self-edit {
+
+      display: inline-block;
+
+      animation: selfEditAnimation 4s infinite;
+
+    }
+
+    @keyframes selfEditAnimation {
+
+      0% { opacity: 1; }
+
+      40% { opacity: 0; }
+
+      60% { opacity: 0; }
+
+      100% { opacity: 1; }
+
+    }
+
+    /* Revision note animation */
+
+    .revision-note {
+
+      display: inline-block;
+
+      margin-left: 10px;
+
+      color: #ff4500;
+
+      opacity: 0;
+
+      animation: noteAppear 3s ease-in-out infinite;
+
+    }
+
+    @keyframes noteAppear {
+
+      0%, 80%, 100% { opacity: 0; }
+
+      40% { opacity: 1; }
+
+    }
+
+    /* Typo editing: red cross effect */
+
+    .typo-edit {
+
+      position: relative;
+
+      display: inline-block;
+
+    }
+
+    .red-cross::after {
+
+      content: "";
+
+      position: absolute;
+
+      left: 0;
+
+      top: 50%;
+
+      width: 100%;
+
+      height: 2px;
+
+      background: red;
+
+      transform: scaleX(0);
+
+      transform-origin: left;
+
+      animation: drawCross 1.5s forwards;
+
+    }
+
+    @keyframes drawCross {
+
+      from { transform: scaleX(0); }
+
+      to { transform: scaleX(1); }
+
+    }
+
+    /* Typewriter effect */
+
+    .typewriter {
+
+      font-family: monospace;
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      border-right: 2px solid #ff4500;
+
+      animation: typing 4s steps(30, end), blink-caret 0.75s step-end infinite;
+
+    }
+
+    @keyframes typing {
+
+      from { width: 0; }
+
+      to { width: 100%; }
+
+    }
+
+    @keyframes blink-caret {
+
+      from, to { border-color: transparent; }
+
+      50% { border-color: #ff4500; }
+
+    }
+
+    /* Animated text effect (inspired by ogvKbLK): each letter wrapped in a span */
+
+    .animated-text span {
+
+      display: inline-block;
+
+      opacity: 0;
+
+      transform: translateY(20px);
+
+      animation: fadeInUp 0.5s forwards;
+
+    }
+
+    @keyframes fadeInUp {
+
+      to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+      }
+
+    }
+
+    /* ASCII chaos box (draggable) */
+
+    .ascii-box {
+
+      position: fixed;
+
+      bottom: 20px;
+
+      right: 20px;
+
+      width: 250px;
+
+      padding: 10px;
+
+      border: 2px solid #1A1A1A;
+
+      background: rgba(255,255,255,0.9);
+
+      font-family: monospace;
+
+      font-size: 0.9rem;
+
+      cursor: move;
+
+      z-index: 10001;
+
+    }
+
+    .ascii-box .close-btn {
+
+      position: absolute;
+
+      top: 2px;
+
+      right: 4px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+
+    }
+
+    /* Timeline container – hidden until final scroll */
+
+    .timeline-container {
+
+      max-width: 600px;
+
+      margin: 40px auto;
+
+      padding: 0 10px;
+
+      display: none;
+
+    }
+
+    .timeline {
+
+      list-style: none;
+
+      padding: 0;
+
+    }
+
+    .timeline-item {
+
+      margin: 10px 0;
+
+      padding: 10px;
+
+      border-left: 3px solid transparent;
+
+      opacity: 0;
+
+    }
+
+    .timeline-item.show {
+
+      opacity: 1;
+
+      transition: opacity 1s ease, border-color 0.5s ease;
+
+      border-color: #ff4500;
+
+      font-weight: bold;
+
+    }
+
+    /* Live bullet points: container for transforming text */
+
+    .bullet-container {
+
+      margin: 20px 0;
+
+      opacity: 1;
+
+      transition: opacity 1s ease;
+
+    }
+
+    .bullet-list {
+
+      list-style: disc inside;
+
+      padding-left: 20px;
+
+      opacity: 0;
+
+      transition: opacity 1s ease;
+
+    }
+
+    .bullet-list li {
+
+      margin: 5px 0;
+
+    }
+
+    /* Decorative footer */
+
+    .decorative-footer {
+
+      text-align: center;
+
+      padding: 10px;
+
+      font-size: 0.8rem;
+
+      background: #F5F3EE;
+
+      color: #666;
+
+      border-top: 1px solid rgba(0,0,0,0.1);
+
+      margin-top: 40px;
+
+    }
+
+    /* Random error box (decorative, closable) */
+
+    .random-error {
+
+      position: fixed;
+
+      bottom: 80px;
+
+      right: 20px;
+
+      background: rgba(255,0,0,0.1);
+
+      border: 1px solid red;
+
+      padding: 10px;
+
+      font-family: monospace;
+
+      font-size: 0.9rem;
+
+      display: none;
+
+      z-index: 10002;
+
+    }
+
+    .random-error .close-btn {
+
+      position: absolute;
+
+      top: 2px;
+
+      right: 4px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Red progress bar -->
+
+  <div id="progressBar"></div>
+
+  
+
+  <!-- Main content container -->
+
+  <div class="content">
+
+    <header class="mb-8">
+
+      <!-- Header text animated letter-by-letter (see JS below) -->
+
+      <h1 id="headerText" class="text-4xl text-center mb-2 animated-text">The Draft Manifesto</h1>
+
+      <p class="text-center italic">A Philosophy of the Unfinished</p>
+
+      <!-- Revision counter -->
+
+      <div id="revision-counter">Revision: 0</div>
+
+    </header>
+
+    
+
+    <!-- Introductory text (animated) -->
+
+    <div class="section">
+
+      <p id="introText" class="animated-text">
+
+        Nothing is finished, including this sentence. Especially this sentence. It will likely be rewritten. Or deleted. Or both. Probably both.
+
+      </p>
+
+    </div>
+
+    
+
+    <!-- Part 1: The Science of the Draft -->
+
+    <div class="section">
+
+      <h2 class="text-3xl mb-2">Part 1: The Science of the Draft</h2>
+
+      <p>
+
+        <strong>I. Perfection Is an Unachievable Myth</strong><br>
+
+        Every "final" version is just a draft waiting to be exposed. Your best ideas were once scribbles on a napkin. That napkin is now lost forever.
+
+        That’s fine, because it wasn’t the final version anyway. If it was perfect, you’d still change it. Nothing is ever truly done. Every finished thing is just a less obvious draft.
+
+        <span class="revision-note">[Revised]</span>
+
+      </p>
+
+      <p>
+
+        <strong>II. The Draft Paradox</strong><br>
+
+        Every attempt to finalize something creates more unfinished work. For example: You decide to write a book, write one sentence, that sentence needs editing, the edit makes you rewrite the entire paragraph, the paragraph makes you question the entire chapter, and the chapter forces you to reconsider the whole book.
+
+        Tomorrow never comes. The draft lives forever.
+
+      </p>
+
+      <p>
+
+        <strong>III. The Laws of Draft Reality</strong><br>
+
+        1️⃣ Anything you write will need a revision. If it doesn’t, you haven’t looked at it long enough.<br>
+
+        2️⃣ Any decision you make will feel wrong later. Even this one.<br>
+
+        3️⃣ Everything takes longer than expected. The universe operates on "Draft Time." Every estimate is a lie you tell yourself.
+
+        Your <span id="selfEditSpan" class="self-edit">quick fix</span> will take four hours and break five other things.<br>
+
+        4️⃣ You can never remove the last typo. Fixing one typo creates two more.
+
+        No matter how many times you check, you’ll find another error only AFTER publishing.
+
+        Perfection is an illusion. Typos are eternal.
+
+        <br>Sometimes, a word remains <span id="typoSpan" class="typo-edit">incomplte</span> before it is corrected.
+
+      </p>
+
+    </div>
+
+    
+
+    <!-- Part 2: The Philosophy of the Incomplete -->
+
+    <div class="section">
+
+      <h2 class="text-3xl mb-2">Part 2: The Philosophy of the Incomplete</h2>
+
+      <p>
+
+        <strong>I. The Fear of an Empty Page</strong><br>
+
+        The most terrifying thing in the world is a blank page. This is why we write nonsense. A draft isn’t about being good. It’s about not being nothing.
+
+        You cannot fix something that doesn’t exist. A bad first draft is still better than the perfect idea you never started.
+
+      </p>
+
+      <p>
+
+        <strong>II. The Draft is Alive</strong><br>
+
+        A draft is not a dead document. It is a living, evolving thing. Your first version is not the final story—it is the conversation you have with yourself.
+
+        Nothing is ever truly finished. Not books. Not music. Not software. Not businesses. Not relationships. Not humans. Not even this manifesto.
+
+        Everything is being worked on.
+
+      </p>
+
+      <p>
+
+        <strong>III. How to Embrace the Draft Mindset</strong><br>
+
+        1. Publish before you're ready. Let the world see your work-in-progress. "Beta" is a mindset.<br>
+
+        2. Accept that revision is infinite. Every draft is the worst version of the next one.<br>
+
+        3. Coffee stains are part of the art. Messy, imperfect things are more real than flawless ones. A stain means it has been lived in.<br>
+
+        4. Let go of "done." Done is an illusion. "Final" is just a word for something you don’t want to change anymore.
+
+        But everything changes anyway.
+
+      </p>
+
+      <p>
+
+        <strong>Typewritten Thought:</strong>
+
+        <span id="typewriterSpan" class="typewriter"></span>
+
+      </p>
+
+      <!-- Live bullet points: initial sentence transforms into a bullet list -->
+
+      <div id="liveBullet" class="bullet-container">
+
+        <p id="bulletInitial">Sentence, sentence</p>
+
+        <ul id="bulletList" class="bullet-list">
+
+          <li>• Point Sentence</li>
+
+          <li>• Point Sentence</li>
+
+        </ul>
+
+      </div>
+
+    </div>
+
+    
+
+    <!-- Part 3: The Draft Will Outlive You -->
+
+    <div class="section">
+
+      <h2 class="text-3xl mb-2">Part 3: The Draft Will Outlive You</h2>
+
+      <p>
+
+        One day, long after you are gone, someone will discover your old notes.
+
+        They will find the half-written stories, the abandoned sketches, the unfinished plans.
+
+        They will smile at the chaos. They will recognize the unfinished mind behind them.
+
+        They will continue your draft. Everything is unfinished. Everything is a draft.
+
+        And that is perfect.
+
+      </p>
+
+      <p>
+
+        <em>Now go. Start your draft. Keep it messy. It was never meant to be anything else.</em>
+
+      </p>
+
+    </div>
+
+    
+
+    <!-- Final Honest Joke -->
+
+    <div class="section">
+
+      <p>This manifesto is 99% done. Maybe. (Check again tomorrow.)</p>
+
+      <p>Nothing in life is ever finished. Everything is a draft. And that’s what makes it beautiful.</p>
+
+    </div>
+
+    
+
+    <!-- Timeline (hidden until final scroll) -->
+
+    <div id="timelineContainer" class="timeline-container">
+
+      <ul class="timeline">
+
+        <li class="timeline-item">📍 First Draft (Lost in a drawer somewhere)</li>
+
+        <li class="timeline-item">📍 Second Draft (Typed with urgency at 2 AM)</li>
+
+        <li class="timeline-item">📍 Third Draft (Corrupted file, rewritten from memory)</li>
+
+        <li class="timeline-item">📍 FINAL_FINAL (Not final)</li>
+
+        <li class="timeline-item">📍 Published (Immediately spotted a typo)</li>
+
+      </ul>
+
+    </div>
+
+  </div>
+
+  
+
+  <!-- ASCII Chaos Box (draggable, closable) -->
+
+  <div class="ascii-box" id="ascii-box">
+
+    <span class="close-btn" onclick="closeAscii()">✖</span>
+
+    ┌──────────────────────────┐<br>
+
+    │  ERROR: UNFINISHED DRAFT │<br>
+
+    ├──────────────────────────┤<br>
+
+    │ "Final_v2_REAL_FINAL"     │<br>
+
+    │   → Renamed to "Draft 99" │<br>
+
+    │   → Still not finished    │<br>
+
+    │   → "Will fix tomorrow"   │<br>
+
+    └──────────────────────────┘<br>
+
+  </div>
+
+  
+
+  <!-- Random Error Box (decorative, closable) -->
+
+  <div id="randomError" class="random-error">
+
+    <span class="close-btn" onclick="closeRandomError()">✖</span>
+
+    <span id="randomErrorText"></span>
+
+  </div>
+
+  
+
+  <!-- Decorative Footer -->
+
+  <footer class="decorative-footer">
+
+    <p>Support the unfinished masterpiece</p>
+
+    <p>
+
+      <a href="https://www.buymeacoffee.com/" target="_blank" style="text-decoration: none; color: inherit;">
+
+        Buy Me a Coffee
+
+      </a>
+
+    </p>
+
+  </footer>
+
+  
+
+  <script>
+
+    /* Update the red progress bar as the user scrolls */
+
+    window.addEventListener("scroll", function () {
+
+      const progressBar = document.getElementById("progressBar");
+
+      const scrollPosition = window.scrollY;
+
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+      progressBar.style.width = (scrollPosition / docHeight) * 100 + "%";
+
+      
+
+      // Show the timeline if within 100px of the bottom and not yet shown
+
+      if (scrollPosition + window.innerHeight >= docHeight - 100 && !timelineShown) {
+
+        timelineShown = true;
+
+        showTimeline();
+
+      }
+
+    });
+
+    let timelineShown = false;
+
+    
+
+    // Reveal timeline items sequentially with smooth fade-in
+
+    function showTimeline() {
+
+      const timelineContainer = document.getElementById("timelineContainer");
+
+      timelineContainer.style.display = "block";
+
+      const items = document.querySelectorAll(".timeline-item");
+
+      items.forEach((item, index) => {
+
+        setTimeout(() => {
+
+          item.classList.add("show");
+
+        }, index * 300);
+
+      });
+
+    }
+
+    
+
+    // Make the ASCII chaos box draggable
+
+    function makeDraggable(element) {
+
+      let isDragging = false, offsetX, offsetY;
+
+      element.addEventListener("mousedown", function (e) {
+
+        isDragging = true;
+
+        offsetX = e.clientX - element.offsetLeft;
+
+        offsetY = e.clientY - element.offsetTop;
+
+      });
+
+      document.addEventListener("mousemove", function (e) {
+
+        if (isDragging) {
+
+          element.style.left = e.clientX - offsetX + "px";
+
+          element.style.top = e.clientY - offsetY + "px";
+
+        }
+
+      });
+
+      document.addEventListener("mouseup", function () {
+
+        isDragging = false;
+
+      });
+
+    }
+
+    // Close ASCII chaos box
+
+    function closeAscii() {
+
+      document.getElementById("ascii-box").style.display = "none";
+
+    }
+
+    
+
+    // Revision counter: increment every 4 seconds
+
+    let revisionCount = 0;
+
+    setInterval(() => {
+
+      revisionCount++;
+
+      document.getElementById("revision-counter").textContent =
+
+        "Revision: " + revisionCount;
+
+    }, 4000);
+
+    
+
+    // Self-editing text: cycle through "quick fix" variants
+
+    const selfEditSpan = document.getElementById("selfEditSpan");
+
+    const selfEditTexts = ["quick fix", "quick fix (4h)", "quick fix (4h, 5 breaks)"];
+
+    let selfEditIndex = 0;
+
+    setInterval(() => {
+
+      selfEditIndex = (selfEditIndex + 1) % selfEditTexts.length;
+
+      selfEditSpan.textContent = selfEditTexts[selfEditIndex];
+
+    }, 4000);
+
+    
+
+    // Typo correction: add red cross then correct the typo
+
+    setTimeout(() => {
+
+      const typoSpan = document.getElementById("typoSpan");
+
+      if (typoSpan) {
+
+        typoSpan.classList.add("red-cross");
+
+        setTimeout(() => {
+
+          typoSpan.textContent = "incomplete";
+
+          typoSpan.classList.remove("red-cross");
+
+        }, 1500);
+
+      }
+
+    }, 5000);
+
+    
+
+    // Typewriter effect for Part 2 text
+
+    const typewriterSpan = document.getElementById("typewriterSpan");
+
+    const typewriterText = "This text is being written as you read it...";
+
+    let i = 0;
+
+    function typeWriterEffect() {
+
+      if (i < typewriterText.length) {
+
+        typewriterSpan.innerHTML += typewriterText.charAt(i);
+
+        i++;
+
+        setTimeout(typeWriterEffect, 100);
+
+      }
+
+    }
+
+    setTimeout(typeWriterEffect, 1000);
+
+    
+
+    // Transform bullet points: hide initial sentence then reveal bullet list
+
+    function transformBullet() {
+
+      const bulletInitial = document.getElementById("bulletInitial");
+
+      const bulletList = document.getElementById("bulletList");
+
+      bulletInitial.style.opacity = 0;
+
+      setTimeout(() => {
+
+        bulletInitial.style.display = "none";
+
+        bulletList.style.opacity = 1;
+
+      }, 1000);
+
+    }
+
+    setTimeout(transformBullet, 3000);
+
+    
+
+    // Random error box: show a random error message at random intervals (20–40 sec)
+
+    const randomErrorBox = document.getElementById("randomError");
+
+    const randomErrorText = document.getElementById("randomErrorText");
+
+    const errorMessages = [
+
+      "Error: Unfinished sentence detected.",
+
+      "Warning: Typo overload.",
+
+      "Notice: Revision required.",
+
+      "Alert: Draft not saved."
+
+    ];
+
+    function showRandomError() {
+
+      const randomIndex = Math.floor(Math.random() * errorMessages.length);
+
+      const message = errorMessages[randomIndex];
+
+      randomErrorText.textContent = message;
+
+      console.log("Random Error:", message);
+
+      randomErrorBox.style.display = "block";
+
+      setTimeout(() => {
+
+        randomErrorBox.style.display = "none";
+
+        scheduleRandomError();
+
+      }, 5000);
+
+    }
+
+    function scheduleRandomError() {
+
+      const delay = 20000 + Math.random() * 20000; // between 20 and 40 seconds
+
+      setTimeout(showRandomError, delay);
+
+    }
+
+    function closeRandomError() {
+
+      randomErrorBox.style.display = "none";
+
+    }
+
+    setTimeout(scheduleRandomError, 20000);
+
+    
+
+    // Generate random ink splatters every 5 seconds
+
+    function createInkSplatter() {
+
+      const splatter = document.createElement("div");
+
+      splatter.className = "ink-splatter";
+
+      splatter.style.left = Math.random() * window.innerWidth + "px";
+
+      splatter.style.top = Math.random() * window.innerHeight + "px";
+
+      document.body.appendChild(splatter);
+
+      setTimeout(() => {
+
+        splatter.remove();
+
+      }, 3000);
+
+    }
+
+    setInterval(createInkSplatter, 5000);
+
+    
+
+    // Animate text: split element’s text into spans and animate each letter
+
+    function animateText(element) {
+
+      const text = element.textContent;
+
+      element.textContent = "";
+
+      for (let i = 0; i < text.length; i++) {
+
+        const span = document.createElement("span");
+
+        span.textContent = text[i];
+
+        span.style.animationDelay = i * 0.05 + "s";
+
+        element.appendChild(span);
+
+      }
+
+    }
+
+    
+
+    // Animate header and intro text on load using animateText
+
+    window.addEventListener("load", function () {
+
+      animateText(document.getElementById("headerText"));
+
+      animateText(document.getElementById("introText"));
+
+      makeDraggable(document.getElementById("ascii-box"));
+
+    });
+
+  </script>
+
+</body>
+
+</html>

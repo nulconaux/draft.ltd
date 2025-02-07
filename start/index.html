@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Draft.ltd | The Safe Manifest for Unfinished Things</title>
+
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <style>
+
+        /* 📜 Paper Draft Aesthetic */
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+
+            font-family: 'Courier New', monospace;
+
+            background: #F4F1EC;
+
+            color: #1A1A1A;
+
+            padding: 20px;
+
+            line-height: 1.6;
+
+        }
+
+        /* 📜 Manifesto Page */
+
+        .manifesto {
+
+            max-width: 800px;
+
+            margin: auto;
+
+            padding: 20px;
+
+            background: white;
+
+            border: 1px dashed black;
+
+            box-shadow: 5px 5px 0 rgba(0,0,0,0.1);
+
+            position: relative;
+
+            overflow: hidden;
+
+        }
+
+        /* ✏️ Typing Effect */
+
+        .typewriter {
+
+            display: inline-block;
+
+            border-right: 2px solid black;
+
+            white-space: nowrap;
+
+            overflow: hidden;
+
+            animation: typing 4s steps(40, end) infinite alternate, blink 0.5s infinite;
+
+        }
+
+        @keyframes typing { from { width: 0; } to { width: 100%; } }
+
+        @keyframes blink { 50% { border-color: transparent; } }
+
+        /* 🔴 Red Markup (Corrections, Highlights) */
+
+        .red {
+
+            color: red;
+
+            font-weight: bold;
+
+            position: relative;
+
+        }
+
+        .red::before {
+
+            content: '';
+
+            position: absolute;
+
+            bottom: -2px;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 2px;
+
+            background: red;
+
+            animation: jitter 0.3s infinite alternate;
+
+        }
+
+        /* ✏️ Strike-Through as if Crossed Out */
+
+        .strikethrough {
+
+            text-decoration: line-through;
+
+            opacity: 0.6;
+
+        }
+
+        /* ✂️ Page Tear */
+
+        .tear {
+
+            width: 100%;
+
+            height: 20px;
+
+            background: linear-gradient(
+
+                to right, 
+
+                rgba(0, 0, 0, 0.2), 
+
+                rgba(255, 255, 255, 0) 50%, 
+
+                rgba(0, 0, 0, 0.2)
+
+            );
+
+            margin-top: 10px;
+
+        }
+
+        /* 🔄 Jittery Animation */
+
+        @keyframes jitter {
+
+            0% { transform: translateX(-1px) translateY(1px); }
+
+            100% { transform: translateX(1px) translateY(-1px); }
+
+        }
+
+        /* 🔄 Floating Correction Marks */
+
+        .correction {
+
+            position: absolute;
+
+            color: red;
+
+            font-size: 12px;
+
+            transform: rotate(-10deg);
+
+            animation: flicker 1.2s infinite alternate;
+
+        }
+
+        @keyframes flicker {
+
+            0% { opacity: 0.7; }
+
+            100% { opacity: 1; }
+
+        }
+
+        /* 🖋️ Draft Notes */
+
+        .note {
+
+            position: absolute;
+
+            background: white;
+
+            padding: 5px;
+
+            border: 1px dashed black;
+
+            font-size: 12px;
+
+            line-height: 1.2;
+
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+
+            cursor: grab;
+
+        }
+
+    </style>
+
+</head>
+
+<body x-data="draftManifesto()" x-init="initDrafts()">
+
+    <!-- 📜 Manifesto Container -->
+
+    <div class="manifesto">
+
+        <h1>📜 The Draft Manifesto</h1>
+
+        <p><span class="typewriter">"This is not a final version..."</span></p>
+
+        <p>Welcome to <strong>Draft.ltd</strong>, a <span class="red">safe place</span> for unfinished things.</p>
+
+        <p>Every idea <span class="strikethrough">should be complete</span> can grow, change, and evolve.</p>
+
+        <p>Imperfection is a process, and <span class="red">perfection is an illusion.</span></p>
+
+        <p class="red">Every edit is a chance to create.</p>
+
+        <!-- 🔄 Iterative Revision -->
+
+        <p><strong>Version:</strong> <span x-text="version"></span></p>
+
+        <button @click="iterateVersion()">🔄 Revise</button>
+
+        <!-- ✂️ Torn Page Effect -->
+
+        <div class="tear"></div>
+
+        <!-- 📜 Floating Correction Marks -->
+
+        <template x-for="(mark, index) in corrections" :key="index">
+
+            <div class="correction" :style="{ left: mark.x + 'px', top: mark.y + 'px' }" x-text="mark.text"></div>
+
+        </template>
+
+    </div>
+
+    <!-- 📝 Floating Draft Notes -->
+
+    <template x-for="(note, index) in notes" :key="index">
+
+        <div class="note" :style="{ top: note.y + 'px', left: note.x + 'px' }" @mousedown="dragStart(index, $event)">
+
+            <div x-text="note.text"></div>
+
+        </div>
+
+    </template>
+
+    <script>
+
+        function draftManifesto() {
+
+            return {
+
+                version: "0.1",
+
+                corrections: [],
+
+                notes: [],
+
+                
+
+                initDrafts() {
+
+                    setInterval(() => this.addCorrection(), 4000);
+
+                },
+
+                iterateVersion() {
+
+                    let parts = this.version.split(".");
+
+                    parts[1] = parseInt(parts[1]) + 1;
+
+                    this.version = parts.join(".");
+
+                },
+
+                addCorrection() {
+
+                    let texts = [
+
+                        "Fix this?",
+
+                        "Maybe rewrite?",
+
+                        "Check spelling?",
+
+                        "Needs clarity!",
+
+                        "Delete this?",
+
+                        "Expand further!"
+
+                    ];
+
+                    let newCorrection = {
+
+                        x: Math.random() * window.innerWidth * 0.4 + 100,
+
+                        y: Math.random() * window.innerHeight * 0.4 + 100,
+
+                        text: texts[Math.floor(Math.random() * texts.length)]
+
+                    };
+
+                    this.corrections.push(newCorrection);
+
+                },
+
+                addNote() {
+
+                    let newNote = {
+
+                        x: Math.random() * window.innerWidth * 0.6,
+
+                        y: Math.random() * window.innerHeight * 0.6,
+
+                        text: "Untitled Draft..."
+
+                    };
+
+                    this.notes.push(newNote);
+
+                },
+
+                dragStart(index, event) {
+
+                    let note = this.notes[index];
+
+                    let shiftX = event.clientX - note.x;
+
+                    let shiftY = event.clientY - note.y;
+
+                    
+
+                    const moveAt = (pageX, pageY) => {
+
+                        note.x = pageX - shiftX;
+
+                        note.y = pageY - shiftY;
+
+                    };
+
+                    const onMouseMove = (e) => moveAt(e.pageX, e.pageY);
+
+                    document.addEventListener("mousemove", onMouseMove);
+
+                    document.addEventListener("mouseup", () => {
+
+                        document.removeEventListener("mousemove", onMouseMove);
+
+                    }, { once: true });
+
+                }
+
+            };
+
+        }
+
+    </script>
+
+</body>
+
+</html>

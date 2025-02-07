@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Runaway</title>
+  <!-- Google Font for our draft feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    /* Base styling: warm paper-like background with subtle noise */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #fdf6e3;
+      font-family: 'Patrick Hand', cursive;
+      color: #333;
+      overflow: hidden;
+      position: relative;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/></svg>");
+    }
+    /* Loader overlay */
+    #loaderOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(253,246,227,0.98);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      cursor: pointer;
+      user-select: none;
+    }
+    #loaderOverlay h1 {
+      font-size: 3rem;
+      color: #ff4500;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.1); }
+    }
+    /* Main content container */
+    #mainContent {
+      display: none;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      font-size: 2.5rem;
+      color: #ff4500;
+    }
+    /* Container for runaway words */
+    #wordContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .word {
+      position: absolute;
+      font-size: 2rem;
+      white-space: nowrap;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+    /* Glitchy ink stain effect */
+    .inkStain {
+      position: absolute;
+      background: rgba(0,0,0,0.1);
+      filter: blur(2px);
+      width: 50px;
+      height: 50px;
+      opacity: 0.3;
+      transform: rotate(45deg);
+      z-index: 5;
+      animation: stainFade 3s ease-out forwards;
+    }
+    @keyframes stainFade {
+      from { opacity: 0.5; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Loader Overlay -->
+  <div id="loaderOverlay"><h1>I warned you</h1></div>
+  <!-- Main Content -->
+  <div id="mainContent">
+    <header>Data Runaway</header>
+    <div id="wordContainer"></div>
+  </div>
+  <script>
+    /***************************************
+     * Loader & Activation
+     ***************************************/
+    // When the user clicks the loader, hide it and show the main content.
+    document.getElementById("loaderOverlay").addEventListener("click", function(){
+      // (AudioContext-related code could go here if sound is added.)
+      document.getElementById("loaderOverlay").style.display = "none";
+      document.getElementById("mainContent").style.display = "block";
+      initRunaway();
+    });
+    
+    /***************************************
+     * Runaway Words Simulation
+     ***************************************/
+    const wordContainer = document.getElementById("wordContainer");
+    const words = [
+      "Revision", "Draft", "Final?", "Update", "Iteration", "Prototype", "Sketch", "Outline", "Concept", "Idea", "Refine", "Rework"
+    ];
+    const wordObjects = [];
+    
+    // Create many words initially
+    function initRunaway() {
+      for (let i = 0; i < 80; i++) {
+        spawnWord();
+      }
+      requestAnimationFrame(updateWords);
+      document.addEventListener("mousemove", repelWords);
+      // Periodically create glitchy ink stains
+      setInterval(createInkStain, 8000);
+    }
+    
+    // Spawn one word element
+    function spawnWord() {
+      const div = document.createElement("div");
+      div.className = "word";
+      // Choose a random word from our array
+      div.textContent = words[Math.floor(Math.random() * words.length)];
+      // Randomize font size between 1.5rem and 3rem
+      div.style.fontSize = (Math.random() * 1.5 + 1.5) + "rem";
+      // Place it at a random position on the screen
+      const x = Math.random() * (window.innerWidth - 100);
+      const y = Math.random() * (window.innerHeight - 100);
+      div.style.left = x + "px";
+      div.style.top = y + "px";
+      // Random initial rotation
+      div.style.transform = "rotate(" + (Math.random() * 40 - 20) + "deg)";
+      // Append to container
+      wordContainer.appendChild(div);
+      // Give it random velocity (vx, vy)
+      const vx = Math.random() * 2 - 1;
+      const vy = Math.random() * 2 - 1;
+      wordObjects.push({el: div, x: x, y: y, vx: vx, vy: vy});
+    }
+    
+    // Update positions and simulate runaway behavior
+    function updateWords() {
+      // Increase overall speed over time (simulate heavy queries running away)
+      const elapsed = (Date.now() - startTime) / 10000; // increase speed every 10 sec
+      const speedMultiplier = 1 + elapsed;
+      for (let obj of wordObjects) {
+        // Update position with velocity
+        obj.x += obj.vx * speedMultiplier;
+        obj.y += obj.vy * speedMultiplier;
+        // Wrap around screen edges for continuous motion
+        if(obj.x < 0) obj.x = window.innerWidth;
+        if(obj.x > window.innerWidth) obj.x = 0;
+        if(obj.y < 0) obj.y = window.innerHeight;
+        if(obj.y > window.innerHeight) obj.y = 0;
+        obj.el.style.left = obj.x + "px";
+        obj.el.style.top = obj.y + "px";
+      }
+      requestAnimationFrame(updateWords);
+    }
+    
+    // Repel words away from the mouse pointer
+    function repelWords(e) {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      for (let obj of wordObjects) {
+        const rect = obj.el.getBoundingClientRect();
+        const wordX = rect.left + rect.width/2;
+        const wordY = rect.top + rect.height/2;
+        const dx = wordX - mouseX;
+        const dy = wordY - mouseY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < 100) {
+          const angle = Math.atan2(dy, dx);
+          const force = (100 - dist) / 20;
+          obj.vx += Math.cos(angle) * force;
+          obj.vy += Math.sin(angle) * force;
+        }
+      }
+    }
+    
+    /***************************************
+     * Glitchy Ink Stains
+     ***************************************/
+    function createInkStain() {
+      const stain = document.createElement("div");
+      stain.className = "inkStain";
+      stain.style.left = Math.random() * window.innerWidth + "px";
+      stain.style.top = Math.random() * window.innerHeight + "px";
+      document.body.appendChild(stain);
+      setTimeout(() => {
+        if(stain.parentNode) stain.parentNode.removeChild(stain);
+      }, 3000);
+    }
+    
+    /***************************************
+     * Initialization Timestamp
+     ***************************************/
+    let startTime = Date.now();
+  </script>
+</body>
+</html>

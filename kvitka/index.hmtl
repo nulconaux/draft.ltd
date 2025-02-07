@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Зима для квітки: Серце, Принцеса і Поцілунки</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <style>
+    /* ==========================
+       Базове оформлення сторінки
+       ========================== */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background-color: #f0eee9; /* світлий фон */
+      /* «Брудний» шумовий ефект */
+      background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 300px 300px;
+      position: relative;
+      font-family: sans-serif;
+    }
+    #canvas {
+      display: block;
+      position: absolute; 
+      top: 0; left: 0;
+      z-index: 1;
+    }
+
+    /* Верхня панель (лічильник зібраних елементів) */
+    .top-panel {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(255,255,255,0.6);
+      padding: 8px;
+      text-align: center;
+      font-size: 1rem;
+      color: #c33;
+      font-weight: bold;
+      z-index: 10;
+    }
+
+    /* Принцеса (внизу ліворуч, наприклад) */
+    .princess {
+      position: fixed;
+      bottom: 0; 
+      left: 10px;
+      width: 100px; /* ви можете налаштувати розмір */
+      z-index: 10;
+      opacity: 0.9; /* трішки прозорості */
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Панель з лічильником -->
+  <div class="top-panel">
+    <span id="collectedCount">Зібрано: 0</span>
+  </div>
+
+  <!-- Принцеса (зображення або emoji) -->
+  <!-- Тут можна підставити інше посилання на PNG чи GIF -->
+  <img class="princess" src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Female_Fairy_Tales_Princess.png/128px-Female_Fairy_Tales_Princess.png" alt="Принцеса" />
+
+  <!-- Полотно для малювання серця та «сніго-квітів-поцілунків» -->
+  <canvas id="canvas"></canvas>
+
+  <script>
+    /****************************************************************
+     * 1) Налаштування Canvas
+     ****************************************************************/
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener("resize", () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
+
+    /****************************************************************
+     * 2) Головний персонаж - СЕРЦЕ
+     ****************************************************************/
+    let heartX = cw / 2;
+    let heartY = ch / 2;
+    const speed = 4;
+    // Керування
+    const keys = {
+      ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false,
+      w:false, a:false, s:false, d:false
+    };
+    window.addEventListener("keydown", e => {
+      if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    });
+    window.addEventListener("keyup", e => {
+      if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+    });
+
+    function updateHeart() {
+      if(keys.ArrowUp || keys.w)    heartY -= speed;
+      if(keys.ArrowDown || keys.s)  heartY += speed;
+      if(keys.ArrowLeft || keys.a)  heartX -= speed;
+      if(keys.ArrowRight|| keys.d)  heartX += speed;
+
+      // межі
+      if(heartX < 0)   heartX = 0;
+      if(heartX > cw)  heartX = cw;
+      if(heartY < 0)   heartY = 0;
+      if(heartY > ch)  heartY = ch;
+    }
+
+    // Малювання серця (подібно до попереднього прикладу)
+    function drawHeart(x, y, size=30) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      const topCurveHeight = size * 0.3;
+      ctx.moveTo(0, size);
+      // Ліва дуга
+      ctx.bezierCurveTo(-size*0.5, size - topCurveHeight, -size, topCurveHeight, -size*0.5, 0);
+      // Права дуга
+      ctx.bezierCurveTo(0, -topCurveHeight, size*0.5, -topCurveHeight, size*0.5, 0);
+      ctx.bezierCurveTo(size, topCurveHeight, size*0.5, size - topCurveHeight, 0, size);
+
+      ctx.fillStyle = "#ff3366";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /****************************************************************
+     * 3) Елементи, що «падають» (квіти, сніжинки, поцілунки тощо)
+     ****************************************************************/
+    // Типи елементів:
+    // - "snow"  => сніжинки (пульсуватимуть)
+    // - "flower" => маленькі квіточки
+    // - "kiss" => поцілунок (emoji "💋")
+    // - "doodle" => інші довільні візерунки
+    // Ви можете додати більше варіацій
+    const ITEM_TYPES = ["snow", "flower", "kiss", "doodle"];
+
+    const items = [];
+    const ITEM_COUNT = 50;  // скільки елементів одночасно
+    // зібрано
+    let collected = 0;
+
+    function spawnItems() {
+      for(let i=0; i<ITEM_COUNT; i++){
+        items.push(createItem());
+      }
+    }
+
+    function createItem() {
+      const type = randomChoice(ITEM_TYPES);
+      const x = Math.random()*cw;
+      // почнемо трішки вище екрану
+      const y = - Math.random()*ch;
+      // швидкість падіння
+      const vy = 1 + Math.random()*2;
+      // дрейф по горизонталі
+      const vx = (Math.random()-0.5)*1;
+      // розмір
+      const size = 10 + Math.random()*15;
+
+      // Для анімації появи: зробимо початкову «scale»
+      const spawnScale = 0.1;  // дуже маленький
+      // з часом нарощуватимемо
+      const growthRate = 0.02 + Math.random()*0.03;
+
+      return {
+        x, y, vx, vy,
+        type,
+        size,
+        scale: spawnScale,   // поточний масштаб
+        grow: growthRate,    // на скільки збільшуємо scale в кожному кадрі
+        pulseOffset: Math.random()*1000, // для «пульсації» сніжинок
+        collected: false
+      };
+    }
+
+    function updateItems() {
+      for(let i=0; i<items.length; i++){
+        const it = items[i];
+        if(it.collected) continue;
+
+        // зростання (анімація появи)
+        if(it.scale < 1) {
+          it.scale += it.grow;
+          if(it.scale > 1) it.scale = 1;
+        }
+
+        // рух
+        it.x += it.vx;
+        it.y += it.vy;
+
+        // особлива пульсація для «snow»
+        if(it.type === "snow") {
+          it.pulseOffset += 0.06;
+        }
+
+        // якщо нижче краю - перенесемо вгору
+        if(it.y > ch + it.size*2) {
+          // перезапустимо
+          items[i] = createItem();
+          continue;
+        }
+
+        // перевірка на зіткнення з серцем
+        const dx = it.x - heartX;
+        const dy = it.y - heartY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < it.size + 20) {
+          it.collected = true;
+          collected++;
+          document.getElementById('collectedCount').textContent = `Зібрано: ${collected}`;
+        }
+      }
+    }
+
+    function drawItems() {
+      for(let i=0; i<items.length; i++){
+        const it = items[i];
+        if(it.collected) continue;
+        drawItem(it);
+      }
+    }
+
+    // Функція малювання елемента за типом
+    function drawItem(it) {
+      ctx.save();
+      ctx.translate(it.x, it.y);
+      // збільшимо на it.scale
+      ctx.scale(it.scale, it.scale);
+
+      switch(it.type){
+        case "snow":
+          // білі кола, що пульсують
+          const pulse = 1 + Math.sin(it.pulseOffset)*0.2; 
+          ctx.beginPath();
+          ctx.arc(0, 0, it.size * pulse, 0, Math.PI*2);
+          ctx.fillStyle = "#fff";
+          ctx.fill();
+          break;
+
+        case "flower":
+          // символ «🌸» (або інша квітка)
+          ctx.font = `${it.size*2}px sans-serif`;
+          ctx.fillText("🌸", -it.size, it.size/2);
+          break;
+
+        case "kiss":
+          // поцілунок «💋»
+          ctx.font = `${it.size*2}px sans-serif`;
+          ctx.fillText("💋", -it.size, it.size/2);
+          break;
+
+        case "doodle":
+          // простий візерунок: зірка, scribble тощо
+          drawDoodle(it.size);
+          break;
+      }
+
+      ctx.restore();
+    }
+
+    function drawDoodle(r) {
+      ctx.strokeStyle = randomColor();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      let px=0, py=0;
+      ctx.moveTo(px,py);
+      for(let i=0;i<5;i++){
+        px += randomRange(-r, r);
+        py += randomRange(-r, r);
+        ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+    }
+
+    /****************************************************************
+     * 4) Основний цикл (анімація)
+     ****************************************************************/
+    function animate() {
+      requestAnimationFrame(animate);
+      ctx.clearRect(0,0,cw,ch);
+
+      // Оновити серце
+      updateHeart();
+      drawHeart(heartX, heartY, 30);
+
+      // Оновити та намалювати падаючі елементи
+      updateItems();
+      drawItems();
+    }
+
+    /****************************************************************
+     * 5) Допоміжні функції
+     ****************************************************************/
+    function randomRange(min, max) {
+      return Math.random()*(max-min)+min;
+    }
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+    function randomColor() {
+      const h = Math.floor(Math.random()*360);
+      const s = 60 + Math.random()*40;
+      const l = 40 + Math.random()*40;
+      return `hsl(${h},${s}%,${l}%)`;
+    }
+
+    /****************************************************************
+     * 6) Старт
+     ****************************************************************/
+    function init() {
+      spawnItems();
+      requestAnimationFrame(animate);
+    }
+    init();
+  </script>
+</body>
+</html>

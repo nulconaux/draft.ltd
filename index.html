@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- Ensure proper scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Draft Revisions Tag Cloud</title>
+  <!-- TailwindCSS for responsive utility classes -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Using a pixelated, retro font -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    /* Base styling */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Press Start 2P', monospace;
+      background-color: #F5F3EE;
+      color: #1A1A1A;
+      position: relative;
+      overflow-x: hidden;
+      /* Add a subtle noisy background using an inline SVG noise filter */
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='noiseFilter'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noiseFilter)' opacity='0.2'/></svg>");
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    /* Tag Cloud Container */
+    .tag-cloud {
+      position: relative;
+      width: 100%;
+      height: 60vh; /* 60% of the viewport height */
+      margin: 0 auto;
+      /* No borders; clean and minimal */
+    }
+    /* Tag styling */
+    .tag-cloud a {
+      position: absolute;
+      text-decoration: none;
+      color: #1A1A1A;
+      font-size: 2rem;
+      transition: transform 0.3s ease, color 0.3s ease;
+      /* For the animated (damaged) effect, we'll use JavaScript on hover */
+    }
+    /* Footer styling */
+    footer {
+      margin-top: 40px;
+      padding: 20px;
+      font-size: 1rem;
+      color: #666;
+      background: #F5F3EE;
+    }
+    /* Background math formulas styling */
+    .math-formula {
+      position: absolute;
+      font-size: 10px;
+      color: rgba(0, 0, 0, 0.1);
+      pointer-events: none;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+      100% { transform: translateY(0) rotate(0deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Draft.ltd</h1>
+    <!-- Tag Cloud Container -->
+    <div id="tagCloud" class="tag-cloud"></div>
+  </div>
+  
+  <!-- Footer -->
+  <footer>
+    <p>Support the unfinished masterpiece</p>
+    <p>
+      <a href="https://www.buymeacoffee.com/" target="_blank" style="color: inherit; text-decoration: none;">Buy Me a Coffee</a>
+    </p>
+  </footer>
+  
+  <script>
+    /* 
+      Simulate dynamic folder grabbing.
+      In a production environment, you might fetch a list of folders from the server.
+    */
+    const folders = ["again", "start", "try", "latest", "debug", "part1", "fall", "matro", "rhythm", "paradox"];
+    
+    const tagCloud = document.getElementById("tagCloud");
+    const cloudWidth = tagCloud.clientWidth;
+    const cloudHeight = tagCloud.clientHeight;
+    
+    // Utility function: random number in a range
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    // Create a tag for each folder
+    folders.forEach(folder => {
+      const a = document.createElement("a");
+      a.href = folder + "/index.html";
+      a.textContent = folder;
+      // Random position within the container
+      a.style.left = randomInRange(0, cloudWidth - 100) + "px";
+      a.style.top = randomInRange(0, cloudHeight - 50) + "px";
+      // Random rotation between -20° and 20°
+      a.style.transform = "rotate(" + randomInRange(-20, 20) + "deg)";
+      // Random font size between 1.5rem and 3rem
+      a.style.fontSize = randomInRange(1.5, 3) + "rem";
+      tagCloud.appendChild(a);
+      
+      // Add physics-inspired damage effect on mouse interactions
+      a.addEventListener("mouseenter", () => {
+        const randomRotate = randomInRange(-30, 30) + "deg";
+        const randomTranslateX = randomInRange(-10, 10) + "px";
+        const randomTranslateY = randomInRange(-10, 10) + "px";
+        const randomScale = randomInRange(0.8, 1.3);
+        const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+        a.style.transition = "transform 0.3s ease, color 0.3s ease";
+        a.style.transform = "rotate(" + randomRotate + ") translate(" + randomTranslateX + ", " + randomTranslateY + ") scale(" + randomScale + ")";
+        a.style.color = randomColor;
+      });
+      a.addEventListener("mouseleave", () => {
+        a.style.transition = "transform 0.5s ease, color 0.5s ease";
+        // Return to a new random base state
+        a.style.transform = "rotate(" + randomInRange(-20, 20) + "deg)";
+        a.style.color = "#1A1A1A";
+      });
+    });
+    
+    // Add background math formulas for extra conceptual detail
+    const mathEquations = ["E=mc²", "F=ma", "π≈3.14", "∑", "√2", "a²+b²=c²", "∫", "σ", "λ"];
+    function initMathFormulas(count) {
+      for (let i = 0; i < count; i++) {
+        const div = document.createElement("div");
+        div.className = "math-formula";
+        div.textContent = mathEquations[Math.floor(Math.random() * mathEquations.length)];
+        div.style.left = randomInRange(0, window.innerWidth) + "px";
+        div.style.top = randomInRange(0, window.innerHeight) + "px";
+        div.style.animationDuration = randomInRange(4, 8) + "s";
+        document.body.appendChild(div);
+      }
+    }
+    initMathFormulas(20);
+  </script>
+</body>
+</html>

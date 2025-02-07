@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Floating Arrow - Collecting & Evolving Enemies</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts for style -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================
+       BASE PAGE & BACKGROUND
+       ========================================= */
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+    }
+    body {
+      font-family: 'Patrick Hand', cursive;
+      position: relative;
+      transition: background-color 1s; /* for a subtle built-in fade */
+    }
+
+    /* Main canvas for the "game" */
+    #gameCanvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 1;
+    }
+
+    /* =========================================
+       TOP PANEL - Info & "Inventory" toggles
+       ========================================= */
+    .top-panel {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      padding: 8px 12px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.5);
+      font-family: 'Press Start 2P', monospace;
+      z-index: 10;
+      color: #fff;
+    }
+
+    /* =========================================
+       INVENTORY PANEL
+       ========================================= */
+    .inventory-panel {
+      position: fixed;
+      top: 60px; 
+      right: 0;
+      width: 200px;
+      max-height: calc(100% - 80px);
+      overflow-y: auto;
+      background: rgba(0,0,0,0.4);
+      padding: 10px;
+      z-index: 10;
+      font-family: 'Press Start 2P', monospace;
+      color: #fff;
+    }
+    .inventory-header {
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      text-decoration: underline;
+    }
+    .inventory-enemy {
+      font-size: 0.75rem;
+      margin-bottom: 4px;
+    }
+
+    /* =========================================
+       FADE OVERLAY for smooth transitions
+       ========================================= */
+    #transitionOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0; /* we animate this in JS */
+      transition: opacity 1s;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-panel">
+    <span>Floating Arrow (WASD / Arrow Keys)</span> |
+    <span>Auto-collect Enemies</span> |
+    <span>They Evolve in Inventory</span>
+  </div>
+
+  <!-- Inventory panel on the right -->
+  <div class="inventory-panel" id="inventoryPanel">
+    <div class="inventory-header">Inventory</div>
+    <div id="inventoryList"></div>
+  </div>
+
+  <!-- The main canvas -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Transition overlay for smooth fade between levels -->
+  <div id="transitionOverlay"></div>
+
+  <script>
+    /*******************************************************
+     * 1) CANVAS SETUP
+     *******************************************************/
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let cw = window.innerWidth;
+    let ch = window.innerHeight;
+    canvas.width = cw;
+    canvas.height = ch;
+
+    window.addEventListener('resize', () => {
+      cw = window.innerWidth;
+      ch = window.innerHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+    });
+
+    /*******************************************************
+     * 2) ENVIRONMENTS + LEVEL CHANGES (with FADE)
+     *******************************************************/
+    const ENVIRONMENTS = [
+      {
+        name: "Glitchy Purple",
+        bgColor: "#2b0030",
+        pattern: "data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%230a0010'/%3E%3Cpath d='M10 10h100v50H10z' fill='%23ff00ff' opacity='0.02'/%3E%3C/svg%3E",
+        spawnRate: 1500
+      },
+      {
+        name: "Coffee-Stained Beige",
+        bgColor: "#f5f3ee",
+        pattern: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.07'/%3E%3C/svg%3E",
+        spawnRate: 2000
+      },
+      {
+        name: "Inky Gray",
+        bgColor: "#333",
+        pattern: "data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100%25' height='100%25' fill='%23000'/%3E%3Ccircle cx='50' cy='50' r='40' fill='%23fff' opacity='0.02'/%3E%3C/svg%3E",
+        spawnRate: 2200
+      }
+    ];
+
+    let currentEnvIndex = 0;
+    let currentEnv = ENVIRONMENTS[currentEnvIndex];
+    let spawnIntervalId = null;
+    let levelTimer = 0;
+    const LEVEL_DURATION = 15000; // 15s each environment
+    const overlay = document.getElementById("transitionOverlay");
+
+    function applyEnvironment(env) {
+      // background color + pattern
+      document.body.style.backgroundColor = env.bgColor;
+      document.body.style.backgroundImage = `url("${env.pattern}")`;
+    }
+
+    function nextEnvironment() {
+      currentEnvIndex = (currentEnvIndex+1) % ENVIRONMENTS.length;
+      currentEnv = ENVIRONMENTS[currentEnvIndex];
+      fadeEnvironmentChange(currentEnv);
+      levelTimer = 0;
+    }
+
+    function fadeEnvironmentChange(env) {
+      // fade overlay in
+      overlay.style.opacity = 1;
+      // after 1s, change environment, then fade out
+      setTimeout(() => {
+        // apply env
+        applyEnvironment(env);
+        // re-start spawn interval
+        if(spawnIntervalId) clearInterval(spawnIntervalId);
+        spawnIntervalId = setInterval(spawnEnemy, env.spawnRate);
+
+        // fade overlay out
+        overlay.style.opacity = 0;
+      }, 1000);
+    }
+
+    /*******************************************************
+     * 3) PLAYER = FLOATING ARROW (WASD / ARROWS)
+     *******************************************************/
+    let playerX = cw/2;
+    let playerY = ch/2;
+    let playerAngle = 0;
+    let playerSpeed = 3;
+    const keys = {
+      ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false,
+      w:false, a:false, s:false, d:false
+    };
+
+    window.addEventListener('keydown', e => {
+      if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    });
+    window.addEventListener('keyup', e => {
+      if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
+    });
+
+    function updatePlayer() {
+      // Move with Arrows or WASD
+      if(keys.ArrowUp || keys.w)    playerY -= playerSpeed;
+      if(keys.ArrowDown || keys.s)  playerY += playerSpeed;
+      if(keys.ArrowLeft || keys.a)  playerX -= playerSpeed;
+      if(keys.ArrowRight || keys.d) playerX += playerSpeed;
+
+      // Keep in bounds
+      if(playerX<0) playerX=0;
+      if(playerX>cw) playerX=cw;
+      if(playerY<0) playerY=0;
+      if(playerY>ch) playerY=ch;
+
+      // Simple orientation
+      if((keys.ArrowRight || keys.d) && !(keys.ArrowLeft||keys.a)) playerAngle=0;
+      if((keys.ArrowLeft  || keys.a) && !(keys.ArrowRight||keys.d)) playerAngle=Math.PI;
+      if((keys.ArrowUp    || keys.w) && !(keys.ArrowDown||keys.s))   playerAngle=-Math.PI/2;
+      if((keys.ArrowDown  || keys.s) && !(keys.ArrowUp||keys.w))     playerAngle=Math.PI/2;
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(playerX, playerY);
+      ctx.rotate(playerAngle);
+      ctx.beginPath();
+      // Arrow shape
+      ctx.moveTo(0, -10);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(0, 10);
+      ctx.lineTo(0, 5);
+      ctx.lineTo(-15, 5);
+      ctx.lineTo(-15, -5);
+      ctx.lineTo(0, -5);
+      ctx.closePath();
+      ctx.fillStyle = "#ff4500";
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /*******************************************************
+     * 4) ENEMIES (5 "Showcase" types), Evolution, & Inventory
+     *******************************************************/
+    const ENEMY_TYPES = ["glitchText", "coffeeStain", "scribbleDoodle", "typewriter", "floatingNote"];
+    const enemies = [];
+    
+    // For capturing enemies (like Pokemon)
+    const playerInventory = []; // array of { type, evolutionLevel, isInInventory, ... }
+
+    // spawn logic
+    function spawnEnemy() {
+      const type = randomChoice(ENEMY_TYPES);
+      const side = Math.floor(Math.random()*4);
+      let x, y;
+      if(side===0) { // left
+        x = -50; y = Math.random()*ch;
+      } else if(side===1) { // right
+        x = cw+50; y = Math.random()*ch;
+      } else if(side===2) { // top
+        x = Math.random()*cw; y = -50;
+      } else {
+        x = Math.random()*cw; y = ch+50;
+      }
+      enemies.push(createEnemy(type, x, y));
+    }
+
+    function createEnemy(type, x, y) {
+      return {
+        type,
+        x, y,
+        vx: randomRange(-2,2),
+        vy: randomRange(-2,2),
+        angle: 0,
+        glitchTimer: 0,
+        scribblePath: createScribblePath(),
+        bobOffset: Math.random()*1000,
+        evolutionLevel: 0,   // each enemy evolves over time
+        isInInventory: false
+      };
+    }
+
+    // small scribble path
+    function createScribblePath() {
+      const path = [];
+      let px=0, py=0;
+      for(let i=0;i<8;i++){
+        px += randomRange(-30,30);
+        py += randomRange(-30,30);
+        path.push({x:px, y:py});
+      }
+      return path;
+    }
+
+    function updateEnemy(e) {
+      // If in inventory, skip movement
+      if(e.isInInventory) return;
+
+      // Evolve gradually
+      e.evolutionLevel += 0.001; // or any speed you prefer
+
+      // Behavior by type
+      switch(e.type) {
+        case "glitchText":
+          e.glitchTimer++;
+          if(e.glitchTimer>60) {
+            e.x = randomRange(0,cw);
+            e.y = randomRange(0,ch);
+            e.glitchTimer=0;
+          }
+          break;
+        case "coffeeStain":
+          // slow drifting
+          e.vx *= 0.99;
+          e.vy *= 0.99;
+          break;
+        case "scribbleDoodle":
+          // cycle through path
+          e.angle += 0.02;
+          const idx = Math.floor(e.angle)%e.scribblePath.length;
+          if(idx>=0 && idx< e.scribblePath.length) {
+            e.vx = e.scribblePath[idx].x*0.02;
+            e.vy = e.scribblePath[idx].y*0.02;
+          }
+          break;
+        case "typewriter":
+          // horizontal only
+          e.vy = 0;
+          break;
+        case "floatingNote":
+          e.bobOffset += 0.05;
+          e.vy = Math.sin(e.bobOffset)*1;
+          break;
+      }
+
+      e.x += e.vx;
+      e.y += e.vy;
+
+      // bounce
+      if(e.x<0){ e.x=0; e.vx*=-1; }
+      if(e.x>cw){ e.x=cw; e.vx*=-1; }
+      if(e.y<0){ e.y=0; e.vy*=-1; }
+      if(e.y>ch){ e.y=ch; e.vy*=-1; }
+    }
+
+    // For collisions => if arrow is close, we “collect”
+    function checkCollisions() {
+      const collectRadius = 20;
+      for(let i=enemies.length-1; i>=0; i--){
+        const en = enemies[i];
+        if(en.isInInventory) continue;
+        const dx = en.x - playerX;
+        const dy = en.y - playerY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if(dist < collectRadius) {
+          // Collect it
+          en.isInInventory = true;
+          // remove from active enemies array? 
+          // or keep them but skip movement/draw
+          // We'll just keep them but skip movement/draw in a real scenario
+          // For simplicity, let's just splice from enemies array:
+          enemies.splice(i,1);
+
+          // Add to inventory
+          addToInventory(en);
+        }
+      }
+    }
+
+    /*******************************************************
+     * 5) INVENTORY
+     *******************************************************/
+    const inventoryListEl = document.getElementById("inventoryList");
+
+    function addToInventory(enemy) {
+      // start at the same evolutionLevel
+      const invItem = {
+        type: enemy.type,
+        evolutionLevel: enemy.evolutionLevel,
+        // continue evolving
+      };
+      playerInventory.push(invItem);
+      updateInventoryUI();
+    }
+
+    function updateInventoryUI() {
+      let html = "";
+      playerInventory.forEach((item, idx)=>{
+        const stage = Math.floor(item.evolutionLevel);
+        html += `<div class="inventory-enemy">
+          [${idx}] Type: ${item.type}, Stage: ${stage}
+        </div>`;
+      });
+      inventoryListEl.innerHTML = html;
+    }
+
+    function updateInventoryEvolution() {
+      // each item keeps evolving
+      playerInventory.forEach(item=>{
+        item.evolutionLevel += 0.002; // slower or faster
+      });
+    }
+
+    /*******************************************************
+     * 6) DRAW ENEMY
+     *******************************************************/
+    function drawEnemy(e) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+
+      // Choose color or size based on evolutionLevel
+      let evoStage = Math.floor(e.evolutionLevel);
+      // Some color shift or effect
+      let color = "#fff";
+      if(evoStage===1) color="#ff0";
+      if(evoStage>=2)  color="#f0f";
+
+      switch(e.type) {
+        case "glitchText":
+          ctx.font="20px 'Press Start 2P', monospace";
+          ctx.fillStyle = color;
+          ctx.fillText("GLITCH", 0, 0);
+          break;
+        case "coffeeStain":
+          ctx.beginPath();
+          ctx.arc(0, 0, 20+(evoStage*5), 0, Math.PI*2);
+          ctx.lineWidth=6;
+          ctx.strokeStyle="rgba(60,40,10,0.6)";
+          ctx.stroke();
+          break;
+        case "scribbleDoodle":
+          // scribble lines
+          ctx.strokeStyle=color;
+          ctx.beginPath();
+          ctx.moveTo(0,0);
+          e.scribblePath.forEach(pt=>{
+            ctx.lineTo(pt.x*0.5, pt.y*0.5);
+          });
+          ctx.stroke();
+          break;
+        case "typewriter":
+          ctx.font="16px 'Patrick Hand', cursive";
+          ctx.fillStyle=color;
+          let txt = "TYPE→→";
+          if(evoStage===1) txt="TypeR~~";
+          if(evoStage>=2)  txt="Fin!";
+          ctx.fillText(txt, -txt.length*4, 0);
+          break;
+        case "floatingNote":
+          ctx.fillStyle=color;
+          ctx.font="24px serif";
+          ctx.fillText("♪", 0,0);
+          break;
+      }
+
+      ctx.restore();
+    }
+
+    /*******************************************************
+     * 7) MAIN LOOP
+     *******************************************************/
+    let lastTime = performance.now();
+    function animate(timestamp){
+      requestAnimationFrame(animate);
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+
+      ctx.clearRect(0,0,cw,ch);
+
+      levelTimer += dt;
+      if(levelTimer>LEVEL_DURATION) {
+        nextEnvironment();
+      }
+
+      updatePlayer();
+      drawPlayer();
+
+      // Update enemies
+      enemies.forEach(en => updateEnemy(en));
+      // Collision => collect
+      checkCollisions();
+      // Draw enemies
+      enemies.forEach(en => drawEnemy(en));
+
+      // Update inventory items (evolution)
+      updateInventoryEvolution();
+      updateInventoryUI();
+    }
+
+    /*******************************************************
+     * 8) INIT
+     *******************************************************/
+    function init() {
+      applyEnvironment(currentEnv);
+      overlay.style.opacity = 0; // ensure overlay is hidden
+      spawnIntervalId = setInterval(spawnEnemy, currentEnv.spawnRate);
+      requestAnimationFrame(animate);
+    }
+
+    /*******************************************************
+     * 9) HELPER FUNCS
+     *******************************************************/
+    function randomRange(min, max) {
+      return Math.random()*(max-min)+min;
+    }
+    function randomChoice(arr) {
+      return arr[Math.floor(Math.random()*arr.length)];
+    }
+
+    init();
+  </script>
+</body>
+</html>

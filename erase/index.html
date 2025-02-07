@@ -3,467 +3,324 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cyberpunk Runner</title>
-  <!-- Alpine.js for lightweight state management -->
-  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <title>Draft Runner</title>
+  <!-- Optional: Alpine.js (for potential state management) -->
+  <script src="https://unpkg.com/alpinejs@3/dist/cdn.min.js" defer></script>
+  <!-- Google Font for a handwritten, draft feel -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
-    /* ---------- Base & Background ---------- */
+    /* Base styling: soft paper background with subtle noise, handwritten style */
     body {
       margin: 0;
       padding: 0;
-      background: #0a0a0a;
-      font-family: 'Courier New', monospace;
+      background: #F5F3EE;
+      font-family: 'Patrick Hand', cursive;
+      color: #1A1A1A;
       overflow: hidden;
       position: relative;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/></svg>");
     }
-    /* Subtle scanlines overlay */
-    #scanlines {
+    /* Canvas for rendering the game */
+    #gameCanvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    /* Fallen Symbols Log (appears at bottom) */
+    #fallenSymbols {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 25vh;
+      overflow-y: auto;
+      background: rgba(245,243,238,0.95);
+      font-size: 1.2rem;
+      padding: 10px;
+      color: #1A1A1A;
+      border-top: 2px dashed #ccc;
+      box-sizing: border-box;
+    }
+    /* Debug Console (upper left) */
+    #debugConsole {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background: rgba(26,26,26,0.7);
+      color: #FF4500;
+      padding: 5px 10px;
+      font-size: 1rem;
+      border-radius: 5px;
+      z-index: 100;
+    }
+    /* HUD (for instructions) */
+    #hud {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 1.5rem;
+      color: #FF4500;
+      z-index: 100;
+    }
+    /* Glitch/Ink effects for a subtle animated overlay */
+    #glitchOverlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       pointer-events: none;
+      z-index: 90;
       background: repeating-linear-gradient(
         0deg,
-        rgba(0,255,170,0.05),
-        rgba(0,255,170,0.05) 2px,
-        transparent 2px,
-        transparent 4px
+        rgba(255,69,0,0.03),
+        rgba(255,69,0,0.03) 1px,
+        transparent 1px,
+        transparent 2px
       );
-      animation: scanlineMove 0.2s linear infinite;
-      z-index: 100;
+      animation: glitchMove 0.5s linear infinite;
     }
-    @keyframes scanlineMove {
-      from { transform: translateY(0); }
-      to { transform: translateY(4px); }
-    }
-    /* ---------- Canvas & Debug ---------- */
-    #gameCanvas {
-      display: block;
-      position: absolute;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-    #debugConsole {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      color: #39FF14;
-      background: rgba(0,0,0,0.5);
-      padding: 5px 10px;
-      font-size: 1rem;
-      z-index: 200;
-      border-radius: 5px;
-    }
-    /* ---------- UI Elements ---------- */
-    .ui-overlay {
-      position: fixed;
-      z-index: 150;
-      color: #ff4500;
-      text-shadow: 0 0 5px #ff4500;
-      font-size: 2rem;
-      pointer-events: none;
-    }
-    #powerupIndicator {
-      top: 50px;
-      right: 10px;
-    }
-    /* ---------- Parallax Background Layers ---------- */
-    .parallax-layer {
-      position: absolute;
-      bottom: 0;
-      width: 200%;
-      height: 50%;
-      background-repeat: repeat-x;
-      opacity: 0.5;
-    }
-    .layer-back {
-      background: #0a0a0a;
-      background-image: linear-gradient(to top, #0a0a0a 0%, transparent 100%);
-      z-index: 1;
-      animation: bgScrollBack 60s linear infinite;
-    }
-    .layer-front {
-      background: #050505;
-      background-image: linear-gradient(to top, #050505 0%, transparent 100%);
-      z-index: 2;
-      animation: bgScrollFront 30s linear infinite;
-    }
-    @keyframes bgScrollBack {
-      from { transform: translateX(0); }
-      to { transform: translateX(-50%); }
-    }
-    @keyframes bgScrollFront {
-      from { transform: translateX(0); }
-      to { transform: translateX(-100%); }
-    }
-    /* ---------- Glitch Effect ---------- */
-    .glitch {
-      position: absolute;
-      animation: glitch 1s infinite;
-    }
-    @keyframes glitch {
-      0% { clip: rect(0, 9999px, 0, 0); transform: translate(0); }
-      50% { clip: rect(5px, 9999px, 20px, 0); transform: translate(-5px, 5px); }
-      100% { clip: rect(0, 9999px, 0, 0); transform: translate(0); }
+    @keyframes glitchMove {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(2px, -2px); }
+      100% { transform: translate(0, 0); }
     }
   </style>
 </head>
 <body>
+  <!-- Debug Console -->
+  <div id="debugConsole">FPS: 0</div>
+  <!-- HUD Instructions -->
+  <div id="hud">Controls: ← → to move, Space to jump, E to erase</div>
+  <!-- Glitch Overlay -->
+  <div id="glitchOverlay"></div>
+  <!-- Game Canvas -->
   <canvas id="gameCanvas"></canvas>
-  <div id="debugConsole">FPS: 0 | Memory: N/A</div>
-  <div id="scanlines"></div>
-  <!-- Parallax background layers -->
-  <div class="parallax-layer layer-back"></div>
-  <div class="parallax-layer layer-front"></div>
+  <!-- Fallen Symbols Log -->
+  <div id="fallenSymbols"></div>
   
   <script>
-    // ------------------------------
-    // Global Variables & Setup
-    // ------------------------------
+    /**********************
+     * Setup Canvas & Globals
+     **********************/
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
     let cw = canvas.width = window.innerWidth;
     let ch = canvas.height = window.innerHeight;
-    
     window.addEventListener("resize", () => {
       cw = canvas.width = window.innerWidth;
       ch = canvas.height = window.innerHeight;
     });
     
-    // Game state variables
+    const debugConsole = document.getElementById("debugConsole");
+    const fallenSymbols = document.getElementById("fallenSymbols");
+    const hud = document.getElementById("hud");
+    
     let lastTime = performance.now();
     let fps = 0;
-    let player, obstacles = [], powerUps = [], glitchPortals = [];
-    let keys = {};
     
-    // Audio: create a dynamic synthwave soundtrack (simple loop)
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // Create a simple oscillator loop for background music
+    // Keyboard input state
+    const keys = {};
+    window.addEventListener("keydown", (e) => { keys[e.key] = true; });
+    window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+    
+    /**********************
+     * Audio Setup: Dynamic Synthwave Loop
+     **********************/
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
     const musicOsc = audioCtx.createOscillator();
     const musicGain = audioCtx.createGain();
     musicOsc.connect(musicGain);
     musicGain.connect(audioCtx.destination);
-    musicOsc.frequency.value = 55; // low tone
+    musicOsc.frequency.value = 55; // Low tone base
     musicOsc.type = "sawtooth";
-    musicGain.gain.value = 0.05;
+    musicGain.gain.value = 0.04;
     musicOsc.start();
+    document.body.addEventListener("click", () => {
+      if(audioCtx.state === "suspended") audioCtx.resume();
+    });
     
-    // Debug Console update function
-    function updateDebug(dt) {
-      fps = Math.round(1000 / dt);
-      let mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "N/A";
-      document.getElementById("debugConsole").textContent = `FPS: ${fps} | Memory: ${mem}`;
+    /**********************
+     * Game State
+     **********************/
+    const player = {
+      x: cw * 0.1,
+      y: ch - 120,
+      width: 50,
+      height: 50,
+      vx: 0,
+      vy: 0,
+      speed: 5,
+      jumpForce: -15,
+      gravity: 0.8,
+      onGround: false,
+      color: "#1A1A1A"
+    };
+    
+    const obstacles = [];
+    const enemySymbols = ["@", "#", "$", "%", "&", "*", "∆", "π"]; // Enemies (revision symbols)
+    
+    let score = 0; // not shown numerically; instead, fallen symbols log is our record
+    let gameOver = false;
+    
+    /**********************
+     * Player Control & Physics
+     **********************/
+    function updatePlayer() {
+      // Horizontal movement
+      if(keys["ArrowRight"]) player.vx = player.speed;
+      else if(keys["ArrowLeft"]) player.vx = -player.speed;
+      else player.vx = 0;
+      
+      // Jumping
+      if(keys[" "] && player.onGround) {
+        player.vy = player.jumpForce;
+        player.onGround = false;
+      }
+      
+      // Apply gravity
+      player.vy += player.gravity;
+      player.x += player.vx;
+      player.y += player.vy;
+      
+      // Ground collision
+      if(player.y + player.height >= ch - 50) {
+        player.y = ch - 50 - player.height;
+        player.vy = 0;
+        player.onGround = true;
+      }
+      
+      // Keep within horizontal bounds
+      if(player.x < 0) player.x = 0;
+      if(player.x + player.width > cw) player.x = cw - player.width;
     }
     
-    // ------------------------------
-    // Game Objects
-    // ------------------------------
-    class Player {
-      constructor() {
-        this.width = 50;
-        this.height = 50;
-        this.x = cw * 0.1;
-        this.y = ch - this.height - 20;
-        this.vx = 0;
-        this.vy = 0;
-        this.jumpForce = -15;
-        this.gravity = 0.8;
-        this.onGround = true;
-        this.powerUp = null;
-      }
-      update() {
-        // Horizontal movement
-        if(keys["ArrowRight"]) { this.vx = 5; }
-        else if(keys["ArrowLeft"]) { this.vx = -5; }
-        else { this.vx = 0; }
-        
-        // Jumping
-        if(keys[" "] && this.onGround) {
-          this.vy = this.jumpForce;
-          this.onGround = false;
-        }
-        
-        // Apply gravity
-        this.vy += this.gravity;
-        this.y += this.vy;
-        this.x += this.vx;
-        
-        // Boundaries
-        if(this.y + this.height >= ch - 20) {
-          this.y = ch - this.height - 20;
-          this.vy = 0;
-          this.onGround = true;
-        }
-        if(this.x < 0) this.x = 0;
-        if(this.x + this.width > cw) this.x = cw - this.width;
-      }
-      draw() {
-        ctx.fillStyle = "#39FF14";
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        // Glitch effect (optional)
-        ctx.save();
-        ctx.globalAlpha = 0.3;
-        ctx.fillStyle = "#ff073a";
-        ctx.fillRect(this.x+5, this.y+5, this.width, this.height);
-        ctx.restore();
-      }
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.fillRect(player.x, player.y, player.width, player.height);
+      // Optional: draw a subtle shadow for a handwritten look
+      ctx.fillStyle = "rgba(0,0,0,0.1)";
+      ctx.fillRect(player.x + 5, player.y + 5, player.width, player.height);
     }
     
+    /**********************
+     * Obstacles (Enemies)
+     **********************/
     class Obstacle {
-      constructor(x, width, speed) {
-        this.x = x;
-        this.y = ch - 20 - Math.random() * 100 - 30;
-        this.width = width;
-        this.height = 30;
-        this.speed = speed;
+      constructor() {
+        this.symbol = enemySymbols[Math.floor(Math.random() * enemySymbols.length)];
+        this.size = randomInRange(30, 60);
+        this.x = cw;
+        this.y = ch - 50 - randomInRange(30, 150);
+        this.speed = randomInRange(4, 8);
       }
       update() {
         this.x -= this.speed;
       }
       draw() {
         ctx.fillStyle = "#ff4500";
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.font = this.size + "px 'Patrick Hand', cursive";
+        ctx.fillText(this.symbol, this.x, this.y);
+      }
+      getBounds() {
+        return { x: this.x, y: this.y - this.size, width: this.size, height: this.size };
       }
     }
     
-    class PowerUp {
-      constructor(x, type) {
-        this.x = x;
-        this.y = ch - 150;
-        this.radius = 15;
-        this.type = type; // "boost", "teleport", "shield"
-        this.speed = 3;
-      }
-      update() {
-        this.x -= this.speed;
-      }
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        if(this.type === "boost") ctx.fillStyle = "#00ffff";
-        else if(this.type === "teleport") ctx.fillStyle = "#ff00ff";
-        else if(this.type === "shield") ctx.fillStyle = "#ffff00";
-        ctx.fill();
-      }
-    }
-    
-    class GlitchPortal {
-      constructor(x) {
-        this.x = x;
-        this.y = ch - 200;
-        this.radius = 20;
-        this.speed = 4;
-        this.active = true;
-      }
-      update() {
-        this.x -= this.speed;
-        // Randomly toggle active state (simulate glitch flicker)
-        if(Math.random() < 0.01) this.active = !this.active;
-      }
-      draw() {
-        if(!this.active) return;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.strokeStyle = "#ff4500";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-      }
-    }
-    
-    // ------------------------------
-    // Create Player & Arrays
-    // ------------------------------
-    const player = new Player();
-    let obstacles = [];
-    let powerUps = [];
-    let glitchPortals = [];
-    let debugTime = performance.now();
-    
-    // ------------------------------
-    // Input Handling
-    // ------------------------------
-    window.addEventListener("keydown", (e) => {
-      keys[e.key] = true;
-      // Activate power-up with Enter key
-      if(e.key === "Enter") activatePowerUp();
-    });
-    window.addEventListener("keyup", (e) => {
-      keys[e.key] = false;
-    });
-    
-    // Touch support for jump (tap to jump)
-    window.addEventListener("touchstart", (e) => {
-      keys[" "] = true;
-    });
-    window.addEventListener("touchend", (e) => {
-      keys[" "] = false;
-    });
-    
-    // ------------------------------
-    // Game Mechanics Functions
-    // ------------------------------
-    function activatePowerUp() {
-      // For demonstration, simply boost player upward
-      player.vy = player.jumpForce * 1.5;
-    }
-    
-    // Procedural obstacle spawning
     function spawnObstacle() {
-      const width = randomInRange(30, 100);
-      obstacles.push(new Obstacle(cw, width, randomInRange(4, 8)));
-    }
-    // Spawn power-ups
-    function spawnPowerUp() {
-      const types = ["boost", "teleport", "shield"];
-      powerUps.push(new PowerUp(cw, types[Math.floor(Math.random() * types.length)]));
-    }
-    // Spawn glitch portals
-    function spawnGlitchPortal() {
-      glitchPortals.push(new GlitchPortal(cw));
+      obstacles.push(new Obstacle());
     }
     
-    // ------------------------------
-    // Collision Detection
-    // ------------------------------
-    function checkCollision(rect1, rect2) {
-      return !(rect2.x > rect1.x + rect1.width ||
-               rect2.x + rect2.width < rect1.x ||
-               rect2.y > rect1.y + rect1.height ||
-               rect2.y + rect2.height < rect1.y);
+    /**********************
+     * Collision Detection
+     **********************/
+    function rectCollision(r1, r2) {
+      return !(r2.x > r1.x + r1.width ||
+               r2.x + r2.width < r1.x ||
+               r2.y > r1.y + r1.height ||
+               r2.y + r2.height < r1.y);
     }
     
-    function checkCircleCollision(cx, cy, cr, rect) {
-      // Find the closest point to the circle within the rectangle
-      let closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.width));
-      let closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.height));
-      let dx = cx - closestX;
-      let dy = cy - closestY;
-      return (dx * dx + dy * dy) < (cr * cr);
+    /**********************
+     * Fallen Symbols Log
+     **********************/
+    function appendFallenSymbol(text) {
+      const span = document.createElement("span");
+      span.textContent = text + " ";
+      span.style.opacity = "0";
+      span.style.transition = "opacity 1s ease";
+      fallenSymbols.appendChild(span);
+      setTimeout(() => { span.style.opacity = "1"; }, 100);
     }
     
-    // ------------------------------
-    // Game Loop
-    // ------------------------------
+    /**********************
+     * Update Loop
+     **********************/
     function gameLoop(timestamp) {
-      const dt = timestamp - debugTime;
-      debugTime = timestamp;
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
       updateDebug(dt);
       
       ctx.clearRect(0, 0, cw, ch);
       
-      // Draw parallax background (simple layers)
-      drawParallaxBackground();
+      // Draw a simple parallax ground
+      ctx.fillStyle = "#ddd";
+      ctx.fillRect(0, ch - 50, cw, 50);
       
       // Update and draw player
-      player.update();
-      player.draw();
+      updatePlayer();
+      drawPlayer();
       
       // Spawn obstacles periodically
       if(Math.random() < 0.02) spawnObstacle();
-      // Spawn power-ups occasionally
-      if(Math.random() < 0.005) spawnPowerUp();
-      // Spawn glitch portals occasionally
-      if(Math.random() < 0.003) spawnGlitchPortal();
       
-      // Update obstacles
+      // Update and draw obstacles
       obstacles.forEach((obs, i) => {
         obs.update();
         obs.draw();
         // Check collision with player
-        const pRect = {x: player.x, y: player.y, width: player.width, height: player.height};
-        const oRect = {x: obs.x, y: obs.y, width: obs.width, height: obs.height};
-        if(checkCollision(pRect, oRect)) {
-          // On collision, force player to jump (simulate impact)
-          player.vy = player.jumpForce * 0.8;
+        const pRect = { x: player.x, y: player.y, width: player.width, height: player.height };
+        const oRect = obs.getBounds();
+        if(rectCollision(pRect, oRect)) {
+          // If player presses "E", erase obstacle; otherwise, add it to fallen log
+          if(keys["e"] || keys["E"]) {
+            obstacles.splice(i, 1);
+            appendFallenSymbol(obs.symbol);
+          } else {
+            // Instead of a pop-up game over, just log it and continue
+            obstacles.splice(i, 1);
+            appendFallenSymbol(obs.symbol);
+          }
         }
         // Remove off-screen obstacles
-        if(obs.x + obs.width < 0) obstacles.splice(i, 1);
-      });
-      
-      // Update power-ups
-      powerUps.forEach((pu, i) => {
-        pu.update();
-        pu.draw();
-        // Check collision with player (as circle vs. rect)
-        const pRect = {x: player.x, y: player.y, width: player.width, height: player.height};
-        if(checkCircleCollision(pu.x, pu.y, pu.radius, pRect)) {
-          // Activate power-up effect based on type
-          if(pu.type === "boost") {
-            player.vy = player.jumpForce * 1.5;
-          } else if(pu.type === "teleport") {
-            // Teleport to a random horizontal position
-            player.x = randomInRange(0, cw - player.width);
-          } else if(pu.type === "shield") {
-            // For demonstration, give temporary invulnerability (not implemented fully)
-            // Could flash the player or change color
-            player.shield = true;
-            setTimeout(() => { player.shield = false; }, 3000);
-          }
-          powerUps.splice(i, 1);
+        if(obs.x + obs.size < 0) {
+          obstacles.splice(i, 1);
         }
-        if(pu.x + pu.radius < 0) powerUps.splice(i, 1);
       });
-      
-      // Update glitch portals
-      glitchPortals.forEach((gp, i) => {
-        gp.update();
-        gp.draw();
-        // Check collision with player: teleport them if collided
-        const pRect = {x: player.x, y: player.y, width: player.width, height: player.height};
-        const portalRect = {x: gp.x - gp.radius, y: gp.y - gp.radius, width: gp.radius * 2, height: gp.radius * 2};
-        if(checkCollision(pRect, portalRect)) {
-          player.x = randomInRange(0, cw - player.width);
-          player.y = ch - player.height - 20;
-          // Optionally, add a glitch effect on teleport
-          player.vx = 0;
-          player.vy = 0;
-        }
-        if(gp.x + gp.radius < 0) glitchPortals.splice(i, 1);
-      });
-      
-      // Debug Console: already updated in updateDebug()
       
       requestAnimationFrame(gameLoop);
     }
     
-    function drawParallaxBackground() {
-      // Draw two simple layers of buildings for parallax effect
-      // Back layer (slow)
-      ctx.fillStyle = "#0a0a0a";
-      for(let i = 0; i < cw; i += 100) {
-        let h = randomInRange(100, 300);
-        ctx.fillRect(i - (timestamp/100 % 100), ch - h - 20, 80, h);
-      }
-      // Front layer (fast)
-      ctx.fillStyle = "#050505";
-      for(let i = 0; i < cw; i += 80) {
-        let h = randomInRange(150, 400);
-        ctx.fillRect(i - (timestamp/50 % 80), ch - h - 20, 60, h);
-      }
-    }
-    
-    // ------------------------------
-    // Debug Console Update
-    // ------------------------------
+    /**********************
+     * Debug Console Update
+     **********************/
     function updateDebug(dt) {
-      const fps = Math.round(1000 / dt);
-      let mem = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + " MB" : "N/A";
-      document.getElementById("debugConsole").textContent = `FPS: ${fps} | Memory: ${mem}`;
+      const currentFPS = Math.round(1000 / dt);
+      debugConsole.textContent = "FPS: " + currentFPS;
     }
     
-    // ------------------------------
-    // Utility: Random Number
-    // ------------------------------
+    /**********************
+     * Utility: Random Number
+     **********************/
     function randomInRange(min, max) {
       return Math.random() * (max - min) + min;
     }
     
-    // ------------------------------
-    // Audio: Dynamic Synthwave Soundtrack (simplified)
-    // ------------------------------
+    /**********************
+     * Audio: Dynamic Synthwave Soundtrack
+     **********************/
     const synthOsc = audioCtx.createOscillator();
     const synthGain = audioCtx.createGain();
     synthOsc.connect(synthGain);
@@ -473,19 +330,12 @@
     synthGain.gain.value = 0.05;
     synthOsc.start();
     
-    // ------------------------------
-    // Start the Game Loop
-    // ------------------------------
-    let timestamp = performance.now();
-    requestAnimationFrame(function loop(ts) {
-      timestamp = ts;
-      gameLoop(ts);
-    });
+    /**********************
+     * Start the Game
+     **********************/
+    // Start the game loop once the page loads (or after a user click on the splash)
+    requestAnimationFrame(gameLoop);
     
-    // ------------------------------
-    // Start the Game on User Interaction
-    // ------------------------------
-    // The game starts when the loader (splash) is clicked.
   </script>
 </body>
 </html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Чорнильний Світ: Детективний Комікс</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+
+  <!-- Використовуємо рукописний та ретро-монолітний шрифт -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    /****************************************************
+     * БАЗОВІ СТИЛІ: фон, папір, шум
+     ****************************************************/
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: #f5f3ee; /* колір «драфтового паперу» */
+      /* Шум для «брудного» газетного ефекту */
+      background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.1'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 300px 300px;
+      font-family: 'Patrick Hand', cursive;
+      color: #1A1A1A;
+    }
+
+    /* ======================================
+       Верхня панель із кнопками "Назад / Далі"
+       ====================================== */
+    .nav-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      padding: 8px 10px;
+      text-align: center;
+      z-index: 999;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .nav-bar button {
+      background: #ff4500;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      margin: 0 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    .nav-bar button:hover {
+      background: #e13b00;
+    }
+
+    /* ======================================
+       Контейнер коміксу
+       ====================================== */
+    .comic-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Сторінки (15 штук) */
+    .page {
+      position: absolute;
+      top: 0; left: 100%;
+      width: 100%; height: 100%;
+      padding: 60px 30px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.7s ease;
+    }
+    /* Коли сторінка активна, зміщуємо left:0 і робимо opacity:1 */
+    .page.active {
+      left: 0;
+      opacity: 1;
+    }
+
+    /* Текст: трошки більший, щоб легше читати */
+    .page p {
+      max-width: 800px;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin: 15px auto;
+    }
+    .page strong {
+      font-family: 'Press Start 2P', monospace;
+    }
+    .page em {
+      font-style: italic;
+    }
+
+    /* Діалог/цитати: окрема бульбашка (необов'язково) */
+    .dialog {
+      background: rgba(255,255,255,0.8);
+      padding: 10px 15px;
+      margin: 10px auto;
+      border-radius: 6px;
+      max-width: 600px;
+      font-style: italic;
+      box-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* ======================================
+       ДЕКОРАТИВНІ ЕФЕКТИ (кавова пляма, дим, чорнило)
+       ====================================== */
+    .coffee-stain {
+      position: absolute;
+      width: 180px; height: 180px;
+      top: 20%; left: 8%;
+      background: url("data:image/svg+xml,%3Csvg width='180' height='180' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='90' cy='90' r='60' fill='none' stroke='%23663' stroke-width='10' stroke-opacity='0.5'/%3E%3Ccircle cx='95' cy='95' r='5' fill='%23844' fill-opacity='0.8'/%3E%3C/svg%3E");
+      background-size: cover;
+      animation: coffeePulse 3s infinite ease-in-out alternate;
+      pointer-events: none;
+      opacity: 0.6;
+      transform: rotateZ(20deg);
+    }
+    @keyframes coffeePulse {
+      0%   { transform: scale(1) rotateZ(20deg); }
+      100% { transform: scale(1.1) rotateZ(20deg); }
+    }
+
+    .cig-smoke {
+      position: absolute;
+      top: 5%; 
+      right: 10%;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 20%, transparent 60%);
+      border-radius: 50%;
+      opacity: 0.35;
+      animation: smokeFloat 4s infinite ease-in-out alternate;
+      pointer-events: none;
+    }
+    @keyframes smokeFloat {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-20px) scale(1.05); }
+    }
+
+    .ink-blot {
+      position: absolute;
+      bottom: 15%; left: 45%;
+      width: 200px; height: 200px;
+      background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M100 0 C150 20 190 40 200 100 C190 160 150 180 100 200 C50 180 10 160 0 100 C10 40 50 20 100 0 Z' fill='%23000' fill-opacity='0.7'/%3E%3C/svg%3E");
+      background-size: cover;
+      pointer-events: none;
+      animation: inkAppear 5s infinite linear;
+      opacity: 0;
+    }
+    @keyframes inkAppear {
+      0% { opacity: 0; transform: scale(0.8); }
+      40%{ opacity: 1; transform: scale(1); }
+      60%{ opacity: 1; transform: scale(1); }
+      100%{ opacity: 0; transform: scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Панель-навігація: перемикання сторінок -->
+  <div class="nav-bar">
+    <button id="prevPage">← Назад</button>
+    <button id="nextPage">Далі →</button>
+  </div>
+
+  <!-- Контейнер коміксу з 15 сторінками -->
+  <div class="comic-container">
+    <!-- Декоративні елементи (кава, дим, чорнило) -->
+    <div class="coffee-stain"></div>
+    <div class="cig-smoke"></div>
+    <div class="ink-blot"></div>
+
+    <!-- 15 сторінок. Нема слів "Акт" — лише послідовні panels/story -->
+    <div class="page" id="page1">
+      <p>
+        Світ завжди був <em>чорно-білим</em>. Це був <strong>паперовий</strong> всесвіт, 
+        нашпигований кавовими плямами та цигарковим димом. Десь у рукописній сутності 
+        блукав <strong>Детектив Макс Бруд</strong>.
+      </p>
+      <p class="dialog">
+        «Кажуть, цей світ — просто стаття в <strong>газеті</strong>,  
+        але я хочу знайти, хто змив <em>сюжет</em> чорнилом…»
+      </p>
+    </div>
+
+    <div class="page" id="page2">
+      <p>
+        Ранок. Макс смакує кавою у квартирі-чернетці. Але аромат не може приховати 
+        дивне відчуття: ніби хтось <em>вирвав сторінку</em> із його історії.
+      </p>
+      <p>
+        Поруч лежить зім’ятий нарис: у ньому згадувалася  
+        <strong>«Принцеса Маргіналія»</strong>. І раптом — knock-knock у двері…
+      </p>
+    </div>
+
+    <div class="page" id="page3">
+      <p>
+        На порозі — <strong>Кавоман</strong>, одержимий ідеєю, що все —  
+        це велика змова кави й чорнила. Він бурмоче, що <em>Принцеса</em> зникла,  
+        а разом з нею — <strong>головне речення</strong> у цьому газетному світі.
+      </p>
+      <p class="dialog">
+        Кавоман: «Вона пішла у темні рядки. Сліди ведуть до <strong>заголовку</strong>  
+        «Чорнильний Змовник»… Поспішай, доки твоя історія не стерлася!»
+      </p>
+    </div>
+
+    <div class="page" id="page4">
+      <p>
+        Макс бере свій старий плащ — плями від кави та сигарет давно перетворили його  
+        на «витвір мистецтва». Він визирає у вікно: навколо густий туман  
+        з чорнильних розводів.
+      </p>
+      <p class="dialog">
+        «Якщо це газетний світ, можливо, я всього лиш  
+        персонаж химерної статті… Але доки я пишу цю історію,  
+        я живий і буду шукати відповіді.»
+      </p>
+    </div>
+
+    <div class="page" id="page5">
+      <p>
+        У пресі з’являються вкраплення: інтерв’ю з свідками,  
+        що бачили <strong>Принцесу</strong> вночі. Кажуть, вона мала дивні  
+        чорнильно-кавові інструменти і говорила про «новий жанр»  
+        замість блідого романсу.
+      </p>
+      <p class="dialog">
+        «Неймовірно, — подумав Макс. — Може, вона створила  
+        власну історію в цій газеті?»
+      </p>
+    </div>
+
+    <div class="page" id="page6">
+      <p>
+        «<strong>Містер Паперовий Попіл</strong>» — відомий курець  
+        сюжетних ліній, — мовлять, його дим ховає найвідвертіші факти.  
+        Макс стикається з ним у підворітті за редакцією.
+      </p>
+      <p class="dialog">
+        Попіл (із сигарою замість носа): «Гей, детективе,    
+        чому шукаєш ту принцесу? Вона ж вилізла з усіх трьох крапок  
+        і пішла поза межі колонок… Ахах, божевільна!»
+      </p>
+    </div>
+
+    <div class="page" id="page7">
+      <p>
+        У темному провулку <strong>Макс</strong> знаходить змиті літери —  
+        обривки слів, що вже втратили контекст. Наче хтось спеціально  
+        руйнував композицію статті.
+      </p>
+      <p>
+        Швидкий порив вітру розвіває сторінки. Попереду  
+        видніється <em>жартівливий напис</em> фарбою:  
+        «<strong>Кава. Цигарки. Крапка</strong>». Чи це слід?
+      </p>
+    </div>
+
+    <div class="page" id="page8">
+      <p>
+        Газетна редакція «<strong>Чорнильний Шрифт</strong>».  
+        Запах тютюну і мокрої кавової гущі заповнює повітря.  
+        Журналістка, прикута до машинки, каже, що якийсь  
+        чоловік у плащі вже питав про «принцесу».
+      </p>
+      <p class="dialog">
+        «Він назвався <strong>Доктор Обривок</strong>. Звучить страшно…»  
+        — пошепки додала журналістка.  
+      </p>
+    </div>
+
+    <div class="page" id="page9">
+      <p>
+        Макс відчуває, що історія стає дедалі  
+        <em>абсурднішою</em>. Як це часто буває із невідредагованими  
+        сценаріями. Але він уже надто близько до істини, щоб відступити.
+      </p>
+      <p>
+        Десь тут — у газетному лабіринті — мусить ховатися та,  
+        хто змінила жанр і вирішила оживити себе… <strong>Принцеса</strong>.
+      </p>
+    </div>
+
+    <div class="page" id="page10">
+      <p>
+        Нарешті він знаходить недбало зачинену кімнату:  
+        гори кавової макухи, недопалені цигарки, і на стіні —  
+        велике чорнильне графіті:  
+      </p>
+      <p class="dialog">
+        «<strong>Новий трилер починається,  
+        коли старі правила перетворюються на попіл!</strong>»
+      </p>
+      <p> 
+        Макс відчуває: це слід Принцеси.  
+      </p>
+    </div>
+
+    <div class="page" id="page11">
+      <p>
+        Позаду лунає голос <strong>Доктора Обривка</strong>:  
+        «Дорогий детективе, ви надто старається,  
+        аби тримати все у колі <em>правильного сюжету</em>.  
+        А Принцеса хоче зробити з цього коміксу щось неймовірне!» 
+      </p>
+      <p class="dialog">
+        Макс (іронічно): «У коміксу вже є головний герой —  
+        отой кавоман із параноїдальними ідеями.  
+        Але він хоч не рве сторінки…»
+      </p>
+    </div>
+
+    <div class="page" id="page12">
+      <p>
+        Раптом <strong>Обривок</strong> напускає чорнильну завісу,  
+        і приміщення стає примарним. Макс чує лише кроки  
+        і тихе хихотіння:  
+      </p>
+      <p class="dialog">
+        «Можливо, ви всі — просто симуляції  
+        нерозкритих історій, ха-ха…»  
+      </p>
+      <p>
+        Та крізь дим Макс помічає знайомий силует.
+      </p>
+    </div>
+
+    <div class="page" id="page13">
+      <p>
+        <strong>Принцеса Маргіналія</strong> — в елегантному чорнильному плащі,  
+        з горнятком кави в руці, стоїть біля вікна.  
+        Вона озирається і зустрічає погляд Макса.  
+      </p>
+      <p class="dialog">
+        «О, ти все ж дійшов… Вибач, що зникла,  
+        але мені набрид нудний текст.  
+        Я прагнула нових жанрів!»
+      </p>
+    </div>
+
+    <div class="page" id="page14">
+      <p>
+        Макс пригадує, як колись вона була лише  
+        «принцесою» в тихій мелодрамі.  
+        Тепер її очі палають іронією трилеру.  
+      </p>
+      <p class="dialog">
+        «Вибач, детективе, але я зміню цей світ.  
+        Навіть якщо доведеться  
+        дописати криваві розділи…»
+      </p>
+      <p>
+        Несподівано з’являється Кавоман і Містер Попіл.  
+        Вони мовчки чекають на рішення Макса.
+      </p>
+    </div>
+
+    <div class="page" id="page15">
+      <p>
+        Макс зітхає:  
+        «Добре. Цей світ — газета, і ми всі — її рядки.  
+        Якщо тобі потрібна допомога, щоб  
+        новий трилер став успішним, я в команді.  
+        Але пообіцяй: жодних безглуздих вирваних сторінок…»
+      </p>
+      <p class="dialog">
+        Принцеса (усміхається): «Згодна.  
+        Тепер попереду <em>купу виправлень</em>.  
+        Та чи не в цьому й суть —  
+        змінювати жанри і при тому  
+        зберігати чорнильний дух?»
+      </p>
+      <p>
+        Навколо — кавові плями, цигарковий дим  
+        і сміх, що обіцяє зовсім інакший фінал.  
+        <strong>Кінець? Поки що</strong>.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Масив сторінок
+    const pages = document.querySelectorAll(".page");
+    let currentIndex = 0;
+    pages[currentIndex].classList.add("active");
+
+    // Кнопки
+    const btnPrev = document.getElementById("prevPage");
+    const btnNext = document.getElementById("nextPage");
+
+    btnPrev.addEventListener("click", ()=> changePage(-1));
+    btnNext.addEventListener("click", ()=> changePage(1));
+
+    function changePage(dir) {
+      pages[currentIndex].classList.remove("active");
+      currentIndex += dir;
+      if(currentIndex < 0) currentIndex=0;
+      if(currentIndex >= pages.length) currentIndex=pages.length-1;
+      pages[currentIndex].classList.add("active");
+    }
+  </script>
+</body>
+</html>

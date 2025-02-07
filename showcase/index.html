@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Draft Manifesto VFX Showcase</title>
+  <!-- Use a handwritten font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    /* Base styling: light paper-like background with subtle noise */
+    body {
+      margin: 0;
+      padding: 0;
+      background: #F5F3EE;
+      font-family: 'Patrick Hand', cursive;
+      color: #1A1A1A;
+      overflow-x: hidden;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.05'/></svg>");
+    }
+    h1 {
+      text-align: center;
+      margin: 20px 0;
+      color: #FF4500;
+    }
+    /* Grid container for VFX cells */
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .vfx-cell {
+      position: relative;
+      border: 2px dashed #ccc;
+      padding: 10px;
+      background: rgba(245,243,238,0.8);
+      height: 250px;
+      overflow: hidden;
+    }
+    .vfx-label {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      font-size: 0.9rem;
+      color: #555;
+      z-index: 10;
+    }
+    .vfx-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    /* ---------- Effect 1: Unfinished Sentence Animation ---------- */
+    #effect1 {
+      font-size: 1.2rem;
+      text-align: center;
+      animation: fadeInOut 3s ease-in-out infinite;
+    }
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    /* ---------- Effect 2: Self-Erasing Text ---------- */
+    #effect2 {
+      font-size: 1.2rem;
+      animation: eraseText 4s ease-in-out infinite;
+    }
+    @keyframes eraseText {
+      0% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    /* ---------- Effect 3: Glitch Effect ---------- */
+    #effect3 {
+      font-size: 1.5rem;
+      color: #FF4500;
+      animation: glitch 1s infinite;
+    }
+    @keyframes glitch {
+      0% { clip: rect(0, 9999px, 0, 0); transform: translate(0); }
+      50% { clip: rect(5px, 9999px, 20px, 0); transform: translate(-5px, 5px); }
+      100% { clip: rect(0, 9999px, 0, 0); transform: translate(0); }
+    }
+    /* ---------- Effect 4: Coffee Stain Animation ---------- */
+    #effect4 {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 70%);
+      animation: stainExpand 3s ease-out infinite;
+    }
+    @keyframes stainExpand {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    /* ---------- Effect 5: Scribble Animation (SVG Path) ---------- */
+    #effect5 svg path {
+      stroke: #1A1A1A;
+      stroke-width: 2;
+      fill: none;
+      stroke-dasharray: 300;
+      stroke-dashoffset: 300;
+      animation: scribble 3s forwards infinite;
+    }
+    @keyframes scribble {
+      to { stroke-dashoffset: 0; }
+    }
+    /* ---------- Effect 6: Animated Revision Counter ---------- */
+    #effect6 {
+      font-size: 2rem;
+      color: #FF4500;
+      /* We'll update the text via JS every second */
+    }
+    /* ---------- Effect 7: Flickering Error Filename ---------- */
+    #effect7 {
+      font-size: 1.2rem;
+      color: #1A1A1A;
+      animation: flicker 1s infinite;
+    }
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    /* ---------- Effect 8: Dripping Ink Effect ---------- */
+    #effect8 {
+      width: 50px;
+      height: 100px;
+      background: linear-gradient(to bottom, #1A1A1A 0%, transparent 100%);
+      animation: drip 2s infinite;
+    }
+    @keyframes drip {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(20px); }
+    }
+    /* ---------- Effect 9: Coffee Stain Drip Variation ---------- */
+    #effect9 {
+      width: 70px;
+      height: 70px;
+      background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 80%);
+      animation: stainDrip 3s infinite;
+    }
+    @keyframes stainDrip {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(15px); }
+    }
+    /* ---------- Effect 10: Typewriter Effect ---------- */
+    #effect10 {
+      font-size: 1.2rem;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid;
+      width: 0;
+      animation: typewriter 4s steps(20) infinite;
+    }
+    @keyframes typewriter {
+      from { width: 0; }
+      to { width: 200px; }
+    }
+    /* ---------- Effect 11: Handwriting Simulation (Fading In) ---------- */
+    #effect11 {
+      font-size: 1.5rem;
+      opacity: 0;
+      animation: handwriting 3s forwards infinite;
+    }
+    @keyframes handwriting {
+      0% { opacity: 0; }
+      50% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    /* ---------- Effect 12: Floating Doodle ---------- */
+    #effect12 {
+      font-size: 2rem;
+      animation: floatDoodle 4s ease-in-out infinite;
+    }
+    @keyframes floatDoodle {
+      0% { transform: translate(0, 0); }
+      50% { transform: translate(10px, -10px); }
+      100% { transform: translate(0, 0); }
+    }
+    /* ---------- Effect 13: Rotating Arrow ---------- */
+    #effect13 {
+      font-size: 3rem;
+      animation: rotateArrow 2s linear infinite;
+    }
+    @keyframes rotateArrow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    /* ---------- Effect 14: Blinking Cursor ---------- */
+    #effect14 {
+      font-size: 2rem;
+      animation: blinkCursor 1s step-start infinite;
+    }
+    @keyframes blinkCursor {
+      from, to { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    /* ---------- Effect 15: Floating Note ---------- */
+    #effect15 {
+      font-size: 1.2rem;
+      animation: floatNote 3s ease-in-out infinite;
+    }
+    @keyframes floatNote {
+      0% { transform: translateY(0); opacity: 1; }
+      50% { transform: translateY(-20px); opacity: 0.5; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    /* ---------- Effect 16: Eraser Swipe ---------- */
+    #effect16 {
+      width: 100px;
+      height: 20px;
+      background: #1A1A1A;
+      animation: eraserSwipe 1s ease-out infinite;
+    }
+    @keyframes eraserSwipe {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    /* ---------- Effect 17: Cross-out Text ---------- */
+    #effect17 {
+      font-size: 1.5rem;
+      position: relative;
+    }
+    #effect17::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 2px;
+      background: #FF4500;
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: crossOut 2s forwards infinite;
+    }
+    @keyframes crossOut {
+      0% { transform: scaleX(0); }
+      50% { transform: scaleX(1); }
+      100% { transform: scaleX(0); }
+    }
+    /* ---------- Effect 18: Animated Doodles ---------- */
+    #effect18 {
+      font-size: 1.8rem;
+      animation: doodleMove 3s ease-in-out infinite;
+    }
+    @keyframes doodleMove {
+      0% { transform: translate(0,0) rotate(0deg); }
+      50% { transform: translate(5px,-5px) rotate(10deg); }
+      100% { transform: translate(0,0) rotate(0deg); }
+    }
+    /* ---------- Effect 19: Random Ink Splatter ---------- */
+    #effect19 {
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 70%);
+      animation: inkSplatter 2s ease-out infinite;
+    }
+    @keyframes inkSplatter {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    /* ---------- Effect 20: Finalizing Spinner ---------- */
+    #effect20 {
+      font-size: 1.5rem;
+      animation: spinDraft 2s linear infinite;
+    }
+    @keyframes spinDraft {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Draft Manifesto VFX Showcase</h1>
+  <div class="container">
+    <!-- Effect 1: Unfinished Sentence Animation -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Unfinished Sentence</div>
+      <div id="effect1" class="vfx-content">Nothing is finished, including this sentence.</div>
+    </div>
+    <!-- Effect 2: Self-Erasing Text -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Self-Erasing Text</div>
+      <div id="effect2" class="vfx-content">I am just a draft...</div>
+    </div>
+    <!-- Effect 3: Glitch Effect -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Glitch Effect</div>
+      <div id="effect3" class="vfx-content">GLITCH</div>
+    </div>
+    <!-- Effect 4: Coffee Stain Animation -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Coffee Stain</div>
+      <div id="effect4" class="vfx-content"></div>
+    </div>
+    <!-- Effect 5: Scribble Animation -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Scribble</div>
+      <div id="effect5" class="vfx-content">
+        <svg viewBox="0 0 150 100" width="150" height="100">
+          <path d="M10,90 Q40,10 70,80 T140,60" />
+        </svg>
+      </div>
+    </div>
+    <!-- Effect 6: Animated Revision Counter -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Revision Counter</div>
+      <div id="effect6" class="vfx-content">v1</div>
+    </div>
+    <!-- Effect 7: Flickering Error Filename -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Error Filename</div>
+      <div id="effect7" class="vfx-content">Final_v2_REAL.doc</div>
+    </div>
+    <!-- Effect 8: Dripping Ink Effect -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Dripping Ink</div>
+      <div id="effect8" class="vfx-content"></div>
+    </div>
+    <!-- Effect 9: Coffee Stain Drip Variation -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Stain Drip</div>
+      <div id="effect9" class="vfx-content"></div>
+    </div>
+    <!-- Effect 10: Typewriter Effect -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Typewriter</div>
+      <div id="effect10" class="vfx-content"></div>
+    </div>
+    <!-- Effect 11: Handwriting Simulation -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Handwriting</div>
+      <div id="effect11" class="vfx-content">Every stroke is a draft.</div>
+    </div>
+    <!-- Effect 12: Floating Doodle -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Floating Doodle</div>
+      <div id="effect12" class="vfx-content">~ doodle ~</div>
+    </div>
+    <!-- Effect 13: Rotating Arrow -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Rotating Arrow</div>
+      <div id="effect13" class="vfx-content">➤</div>
+    </div>
+    <!-- Effect 14: Blinking Cursor -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Blinking Cursor</div>
+      <div id="effect14" class="vfx-content">|</div>
+    </div>
+    <!-- Effect 15: Floating Note -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Floating Note</div>
+      <div id="effect15" class="vfx-content">Remember: drafts never end.</div>
+    </div>
+    <!-- Effect 16: Eraser Swipe -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Eraser Swipe</div>
+      <div id="effect16" class="vfx-content"></div>
+    </div>
+    <!-- Effect 17: Cross-out Text -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Cross-out Text</div>
+      <div id="effect17" class="vfx-content">This is not final.</div>
+    </div>
+    <!-- Effect 18: Animated Doodles -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Animated Doodles</div>
+      <div id="effect18" class="vfx-content">~ sketch ~</div>
+    </div>
+    <!-- Effect 19: Random Ink Splatter -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Ink Splatter</div>
+      <div id="effect19" class="vfx-content"></div>
+    </div>
+    <!-- Effect 20: Finalizing Spinner -->
+    <div class="vfx-cell">
+      <div class="vfx-label">Infinite Draft</div>
+      <div id="effect20" class="vfx-content">Finalizing...</div>
+    </div>
+  </div>
+  
+  <script>
+    /* --- Utility: Random Number --- */
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    /* --- Effect 6: Revision Counter Update --- */
+    const effect6 = document.getElementById("effect6");
+    let revisionNumber = 1;
+    setInterval(() => {
+      revisionNumber++;
+      effect6.textContent = "v" + revisionNumber;
+    }, 1000);
+    
+    /* --- Effect 10: Typewriter Effect --- */
+    const effect10 = document.getElementById("effect10");
+    const typewriterText = "The quick brown fox jumps over the lazy dog.";
+    let typeIndex = 0;
+    setInterval(() => {
+      if (typeIndex <= typewriterText.length) {
+        effect10.textContent = typewriterText.substring(0, typeIndex);
+        typeIndex++;
+      } else {
+        typeIndex = 0;
+      }
+    }, 150);
+    
+    /* --- End Additional Effects --- */
+  </script>
+  
+  <script>
+    /***************
+     * Game Setup & Global Variables
+     ***************/
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    let cw = canvas.width = window.innerWidth;
+    let ch = canvas.height = window.innerHeight;
+    window.addEventListener("resize", () => {
+      cw = canvas.width = window.innerWidth;
+      ch = canvas.height = window.innerHeight;
+    });
+    
+    const debugConsole = document.getElementById("debugConsole");
+    let lastTimeStamp = performance.now();
+    
+    const keys = {};
+    window.addEventListener("keydown", e => { keys[e.key] = true; });
+    window.addEventListener("keyup", e => { keys[e.key] = false; });
+    
+    /***************
+     * Audio Setup: Synthwave Soundtrack
+     ***************/
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    const synthOsc = audioCtx.createOscillator();
+    const synthGain = audioCtx.createGain();
+    synthOsc.connect(synthGain);
+    synthGain.connect(audioCtx.destination);
+    synthOsc.frequency.value = 55;
+    synthOsc.type = "sawtooth";
+    synthGain.gain.value = 0.05;
+    synthOsc.start();
+    document.body.addEventListener("click", () => {
+      if(audioCtx.state === "suspended") audioCtx.resume();
+    });
+    
+    /***************
+     * Game Objects
+     ***************/
+    const player = {
+      x: cw * 0.1,
+      y: ch - 150,
+      width: 50,
+      height: 50,
+      vx: 0,
+      vy: 0,
+      speed: 5,
+      jumpForce: -15,
+      gravity: 0.8,
+      onGround: false,
+      color: "#1A1A1A",
+      update() {
+        if(keys["ArrowRight"]) this.vx = this.speed;
+        else if(keys["ArrowLeft"]) this.vx = -this.speed;
+        else this.vx = 0;
+        if(keys[" "] && this.onGround) {
+          this.vy = this.jumpForce;
+          this.onGround = false;
+        }
+        this.vy += this.gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+        if(this.y + this.height >= ch - 50) {
+          this.y = ch - 50 - this.height;
+          this.vy = 0;
+          this.onGround = true;
+        }
+        if(this.x < 0) this.x = 0;
+        if(this.x + this.width > cw) this.x = cw - this.width;
+      },
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = "rgba(0,0,0,0.1)";
+        ctx.beginPath();
+        ctx.arc(this.x + this.width/2 + 3, this.y + this.height/2 + 3, this.width/2, 0, Math.PI*2);
+        ctx.fill();
+      }
+    };
+    
+    function drawPlayer() {
+      player.draw();
+    }
+    
+    const fullEnemyChars = ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{};:'\",.<>/?").split("");
+    class Enemy {
+      constructor() {
+        this.symbol = fullEnemyChars[Math.floor(Math.random() * fullEnemyChars.length)];
+        this.size = randomInRange(30, 60);
+        this.x = cw;
+        this.y = ch - 50 - randomInRange(30, 150);
+        this.speed = randomInRange(4, 8);
+      }
+      update() {
+        this.x -= this.speed;
+      }
+      draw() {
+        ctx.fillStyle = "#ff4500";
+        ctx.font = this.size + "px 'Patrick Hand', cursive";
+        ctx.fillText(this.symbol, this.x, this.y);
+      }
+      getBounds() {
+        return { x: this.x, y: this.y - this.size, width: this.size, height: this.size };
+      }
+    }
+    
+    let enemies = [];
+    
+    let strikes = 0;
+    let misses = 0;
+    let comboCount = 0;
+    let lastEraseTime = 0;
+    
+    /***************
+     * Particle Effects for Erase Action
+     ***************/
+    const particles = [];
+    function spawnParticles(x, y) {
+      for(let i = 0; i < 20; i++){
+        particles.push({
+          x: x,
+          y: y,
+          vx: randomInRange(-2,2),
+          vy: randomInRange(-2,2),
+          radius: randomInRange(2,4),
+          alpha: 1,
+          life: randomInRange(500,1000),
+          born: Date.now()
+        });
+      }
+    }
+    function updateParticles() {
+      for(let i = particles.length - 1; i >= 0; i--){
+        let p = particles[i];
+        let age = Date.now() - p.born;
+        if(age > p.life) { particles.splice(i,1); continue; }
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha = 1 - (age / p.life);
+        ctx.fillStyle = "rgba(255,69,0," + p.alpha + ")";
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    
+    /***************
+     * Combo Animation
+     ***************/
+    function showCombo(count) {
+      const comboElem = document.createElement("div");
+      comboElem.className = "comboText";
+      comboElem.textContent = "Combo x" + count + "!";
+      comboElem.style.left = (player.x + player.width/2) + "px";
+      comboElem.style.top = (player.y - 30) + "px";
+      document.body.appendChild(comboElem);
+      setTimeout(() => {
+        comboElem.style.top = (player.y - 80) + "px";
+        comboElem.style.opacity = "0";
+      }, 100);
+      setTimeout(() => {
+        if(comboElem.parentNode) comboElem.parentNode.removeChild(comboElem);
+      }, 1000);
+    }
+    
+    /***************
+     * Fallen Symbols Log
+     ***************/
+    function appendFallenSymbol(text) {
+      const span = document.createElement("span");
+      span.textContent = text + " ";
+      span.style.opacity = "0";
+      span.style.transition = "opacity 1s ease";
+      fallenSymbols.appendChild(span);
+      setTimeout(() => { span.style.opacity = "1"; }, 100);
+    }
+    
+    /***************
+     * Collision Detection
+     ***************/
+    function rectCollision(r1, r2) {
+      return !(r2.x > r1.x + r1.width ||
+               r2.x + r2.width < r1.x ||
+               r2.y > r1.y + r1.height ||
+               r2.y + r2.height < r1.y);
+    }
+    
+    /***************
+     * Utility: Random Number
+     ***************/
+    function randomInRange(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+    
+    /***************
+     * Erase Action (Firing)
+     ***************/
+    function eraseAction() {
+      const now = Date.now();
+      if(now - lastEraseTime < 1000) comboCount++;
+      else comboCount = 1;
+      lastEraseTime = now;
+      showCombo(comboCount);
+      const pRect = { x: player.x - 30, y: player.y - 30, width: player.width + 60, height: player.height + 60 };
+      for(let i = enemies.length - 1; i >= 0; i--){
+        const enemy = enemies[i];
+        const eRect = enemy.getBounds();
+        if(rectCollision(pRect, eRect)) {
+          spawnParticles(enemy.x + enemy.size/2, enemy.y - enemy.size/2);
+          appendFallenSymbol(enemy.symbol);
+          playTokenSound();
+          enemies.splice(i, 1);
+          strikes++;
+        }
+      }
+    }
+    
+    /***************
+     * Game Loop
+     ***************/
+    let lastTime = performance.now();
+    function gameLoop(timestamp) {
+      const dt = timestamp - lastTime;
+      lastTime = timestamp;
+      updateDebug(dt);
+      
+      ctx.clearRect(0, 0, cw, ch);
+      
+      // Draw parallax ground (a simple paper edge)
+      ctx.fillStyle = "#ddd";
+      ctx.fillRect(0, ch - 50, cw, 50);
+      
+      // Update and draw player
+      player.update();
+      drawPlayer();
+      
+      // Erase action if E is pressed
+      if(keys["e"] || keys["E"]) {
+        eraseAction();
+      }
+      
+      // Spawn enemies periodically
+      if(Math.random() < 0.02) spawnEnemy();
+      
+      // Update and draw enemies
+      for(let i = enemies.length - 1; i >= 0; i--){
+        const enemy = enemies[i];
+        enemy.update();
+        enemy.draw();
+        const pRect = { x: player.x, y: player.y, width: player.width, height: player.height };
+        const eRect = enemy.getBounds();
+        if(rectCollision(pRect, eRect)) {
+          appendFallenSymbol(enemy.symbol);
+          enemies.splice(i, 1);
+          misses++;
+          comboCount = 0;
+        }
+        if(enemy.x + enemy.size < 0) enemies.splice(i, 1);
+      }
+      
+      updateParticles();
+      
+      requestAnimationFrame(gameLoop);
+    }
+    
+    /***************
+     * Debug Console Update
+     ***************/
+    function updateDebug(dt) {
+      const currentFPS = Math.round(1000 / dt);
+      debugConsole.textContent = "FPS: " + currentFPS;
+    }
+    
+    /***************
+     * Audio: Play Sound for Erase Action
+     ***************/
+    function playTokenSound() {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.frequency.value = 200 + Math.random() * 600;
+      const waveforms = ["sine", "square", "sawtooth", "triangle"];
+      oscillator.type = waveforms[Math.floor(Math.random() * waveforms.length)];
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    }
+    
+    /***************
+     * Start the Game Loop
+     ***************/
+    requestAnimationFrame(gameLoop);
+    
+    /***************
+     * Resume Audio on User Gesture (Splash Overlay)
+     ***************/
+    const splashOverlay = document.createElement("div");
+    splashOverlay.style.position = "fixed";
+    splashOverlay.style.top = "0";
+    splashOverlay.style.left = "0";
+    splashOverlay.style.width = "100vw";
+    splashOverlay.style.height = "100vh";
+    splashOverlay.style.background = "rgba(245,243,238,0.98)";
+    splashOverlay.style.display = "flex";
+    splashOverlay.style.alignItems = "center";
+    splashOverlay.style.justifyContent = "center";
+    splashOverlay.style.zIndex = "300";
+    splashOverlay.style.cursor = "pointer";
+    splashOverlay.innerHTML = "<h1 style='font-size:4rem; color:#ff4500;'>Click to Start</h1>";
+    document.body.appendChild(splashOverlay);
+    splashOverlay.addEventListener("click", () => {
+      if(audioCtx.state === "suspended") audioCtx.resume();
+      splashOverlay.remove();
+    });
+  </script>
+</body>
+</html>
